@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Quy hoạch tuyến tính hai biến – Trực quan hóa miền nghiệm</title>
+<meta name="description" content="Web App trực quan hóa miền nghiệm và giải bài toán Quy hoạch tuyến tính hai biến theo 5 bước SGK.">
+
+<!-- Tailwind CSS (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          mint:  { DEFAULT: '#a8e6cf', light: '#eaf8f1', dark: '#2f9e72' },
+          peach: { DEFAULT: '#ffd3b6', light: '#fff3ea', dark: '#e07b45' },
+          blush: { DEFAULT: '#ffaaa5', light: '#fff0ef' }
+        },
+        fontFamily: { sans: ['"Be Vietnam Pro"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'] },
+        boxShadow: { soft: '0 6px 24px -8px rgba(15, 23, 42, 0.12)' }
+      }
+    }
+  };
+</script>
+
+<!-- Font hỗ trợ tiếng Việt -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- KaTeX: hiển thị công thức toán (có cơ chế dự phòng nếu không tải được) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+<style>
+  :root { --mint:#a8e6cf; --peach:#ffd3b6; --blush:#ffaaa5; }
+  html { -webkit-text-size-adjust: 100%; }
+  @media (min-width: 1024px) { html, body { height: 100%; overflow: hidden; } }
+  body { font-family: "Be Vietnam Pro", system-ui, sans-serif; }
+
+  /* Ô nhập số */
+  .num-in {
+    width: 3.4rem; min-width: 0; text-align: center; font-weight: 600; color: #1e293b;
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: .6rem; padding: .38rem .25rem;
+    transition: border-color .15s, box-shadow .15s, background .15s; font-size: .95rem;
+  }
+  @media (min-width: 640px) { .num-in { width: 3.9rem; } }
+
+  /* Khung bố cục chung */
+  .sec-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
+  .sec-h { display: flex; align-items: center; gap: .5rem; font-size: .9rem; font-weight: 700; color: #0f172a; margin-bottom: .6rem; }
+  .sec-no { width: 1.35rem; height: 1.35rem; border-radius: .4rem; display: grid; place-items: center; font-size: .72rem; font-weight: 800; background: #eaf8f1; color: #2f9e72; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: .9rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); overflow: hidden; }
+  .card-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; padding: .55rem .75rem .55rem 1rem; border-bottom: 1px solid #f1f5f9; }
+  .card-title { font-size: .92rem; font-weight: 700; color: #0f172a; }
+  .icon-btn { width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: .5rem; border: 1px solid #e2e8f0; color: #475569; background: #fff; transition: background .15s; }
+  .icon-btn:hover { background: #f8fafc; }
+  .goal-btn { padding: .3rem .9rem; font-size: .85rem; font-weight: 700; border-radius: .4rem; color: #64748b; transition: all .15s; }
+  .goal-btn.on-max { background: #a8e6cf; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .goal-btn.on-min { background: #ffd3b6; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .sol-table { width: 100%; border-collapse: collapse; font-size: .9rem; margin: .35rem 0; }
+  .sol-table th { background: #f8fafc; color: #475569; font-weight: 600; text-align: left; padding: .4rem .55rem; border: 1px solid #e2e8f0; white-space: nowrap; }
+  .sol-table td { padding: .4rem .55rem; border: 1px solid #e2e8f0; vertical-align: middle; }
+  .sol-table .sub { color: #64748b; font-size: .8rem; }
+  .solution .print-only { display: none; }
+  .num-in:focus { outline: none; border-color: #5cc79b; box-shadow: 0 0 0 3px rgba(168,230,207,.55); }
+  .num-in.in-error { border-color: #f43f5e; background: #fff1f2; box-shadow: 0 0 0 3px rgba(244,63,94,.15); animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+  .op-sel {
+    appearance: none; -webkit-appearance: none; width: 2.6rem; text-align: center; text-align-last: center;
+    font-weight: 700; font-size: 1.05rem; color: #c2410c; background: #fff3ea; border: 1.5px solid #ffd3b6;
+    border-radius: .6rem; padding: .3rem 0; cursor: pointer;
+  }
+  .op-sel:focus { outline: none; box-shadow: 0 0 0 3px rgba(255,211,182,.7); }
+  .var { font-style: italic; font-family: "Times New Roman", serif; font-size: 1.1rem; color: #334155; white-space: nowrap; }
+
+  /* Canvas */
+  #plotWrap { touch-action: none; }
+  #plot { touch-action: none; cursor: grab; display: block; width: 100%; height: 100%; }
+  #plot.grabbing { cursor: grabbing; }
+
+  /* Bảng kết quả */
+  .res-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .9rem; }
+  .res-table th { background: #f8fafc; color: #475569; font-weight: 600; text-align: left; padding: .55rem .6rem; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+  .res-table td { padding: .5rem .6rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .res-table tr.opt-row td { background: #eaf8f1; font-weight: 700; color: #065f46; }
+  .res-table tr.opt-row td:first-child { box-shadow: inset 4px 0 0 #2f9e72; }
+  .res-table tr.sup-row td { background: #fffbeb; font-weight: 700; color: #92400e; }
+  .res-table tr.excl-row td { color: #94a3b8; }
+
+  /* Lời giải */
+  .solution { color: #334155; line-height: 1.7; font-size: .97rem; }
+  /* Lời giải trình bày liên tục như bài tự luận */
+  .solution .step { margin: 0 0 .85rem; }
+  .solution .step p { margin: .2rem 0; }
+  .solution .step-head { margin: 0 0 .15rem; }
+  .solution .step-no { font-weight: 800; color: #2f9e72; }
+  .solution .step-title { font-weight: 700; color: #0f172a; }
+  .solution .sol-title { font-weight: 800; font-size: 1.05rem; color: #0f172a; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .02em; }
+  .solution ul { list-style: disc; padding-left: 1.25rem; margin: .4rem 0; }
+  .solution li { margin: .35rem 0; }
+  .solution .math-block { overflow-x: auto; padding: .4rem 0; }
+  .solution .graph-img { width: 100%; max-width: 640px; display: block; margin: .6rem auto; border: 1px solid #e2e8f0; border-radius: .8rem; }
+  .solution .conclusion { background: #eaf8f1; border-left: 4px solid #2f9e72; padding: .7rem .9rem; border-radius: .6rem; margin-top: .6rem; }
+  .solution .conclusion.warn { background: #fffbeb; border-left-color: #f59e0b; }
+  .solution .conclusion.bad { background: #fff1f2; border-left-color: #f43f5e; }
+  .solution .note { color: #64748b; font-size: .9rem; }
+  .solution .table-wrap { overflow-x: auto; }
+  .katex { font-size: 1.06em; }
+  .katex-display { margin: .3em 0; }
+
+  /* Toast */
+  #toast { transition: opacity .25s, transform .25s; }
+
+  /* Thanh cuộn mảnh */
+  .thin-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+
+  /* ================= IN / XUẤT PDF ================= */
+  #printArea { display: none; }
+  @media print {
+    @page { size: A4; margin: 14mm 14mm 16mm; }
+    html, body { background: #fff !important; overflow: visible !important; height: auto !important; }
+    .solution .print-only { display: block !important; }
+    .sol-table { font-size: 10.5pt; }
+    body > *:not(#printArea) { display: none !important; }
+    #printArea { display: block !important; color: #111827; font-size: 11.5pt; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .report-head { border-bottom: 2px solid #2f9e72; padding-bottom: 8px; margin-bottom: 12px; }
+    .report-head h1 { font-size: 16pt; font-weight: 800; margin: 0; color: #0f172a; }
+    .report-head p { margin: 2px 0 0; color: #475569; font-size: 10pt; }
+    .report-problem { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; background: #f8fafc; }
+    .solution .step-head { break-after: avoid; page-break-after: avoid; }
+    .solution .graph-img { max-width: 15cm; break-inside: avoid; }
+    .solution .table-wrap, .solution .conclusion, .solution .math-block { break-inside: avoid; page-break-inside: avoid; }
+    .res-table { font-size: 10.5pt; }
+    .res-table th, .res-table td { border: 1px solid #cbd5e1; }
+    .report-foot { margin-top: 14px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 9pt; color: #64748b; text-align: center; }
+  }
+</style>
+</head>
+
+<body class="bg-slate-100 text-slate-700 antialiased lg:overflow-hidden">
+
+<div id="app" class="min-h-screen lg:h-screen flex flex-col">
+  <!-- ===================== HEADER ===================== -->
+  <header class="shrink-0 h-14 bg-white border-b border-slate-200 z-30">
+    <div class="h-full px-3 sm:px-5 flex items-center gap-3">
+      <div class="w-9 h-9 shrink-0 rounded-lg bg-gradient-to-br from-mint to-peach grid place-items-center">
+        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21V3M3 21h18"/><path d="M5 17l4-9 7 2 3 7z" fill="rgba(255,255,255,.7)"/><circle cx="16" cy="10" r="1.6" fill="#ef4444" stroke="none"/>
+        </svg>
+      </div>
+      <div class="min-w-0 leading-tight">
+        <h1 class="text-[15px] sm:text-base font-extrabold text-slate-800 truncate">Quy hoạch tuyến tính hai biến</h1>
+        <p class="hidden sm:block text-[11px] text-slate-500">Trực quan hóa miền nghiệm · Tìm GTLN / GTNN của <i>F</i>(<i>x</i>;<i>y</i>) = <i>Ax</i> + <i>By</i></p>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 min-h-0 lg:overflow-hidden lg:grid lg:grid-rows-[minmax(0,1fr)] lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[430px_minmax(0,1fr)]">
+
+    <!-- ===================== CỘT TRÁI: NHẬP SỐ LIỆU ===================== -->
+    <aside id="leftCol" class="relative lg:min-h-0 bg-white lg:border-r border-b lg:border-b-0 border-slate-200 lg:overflow-y-auto thin-scroll flex flex-col" aria-label="Nhập dữ liệu">
+      <div class="p-4 sm:p-5 space-y-5 flex-1">
+
+        <!-- Bài mẫu -->
+        <div>
+          <label for="sampleSel" class="sec-label">Bài toán mẫu</label>
+          <select id="sampleSel" class="mt-1.5 w-full text-sm rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 focus:outline-none focus:ring-4 focus:ring-mint/50">
+            <option value="">— Chọn bài toán mẫu —</option>
+          </select>
+        </div>
+
+        <!-- Hàm mục tiêu -->
+        <section>
+          <h2 class="sec-h"><span class="sec-no">1</span>Hàm mục tiêu</h2>
+          <div class="flex items-center gap-1.5">
+            <span class="var font-semibold">F(x;y) =</span>
+            <input id="inA" class="num-in" type="text" autocomplete="off" spellcheck="false" aria-label="Hệ số A">
+            <span class="var">x +</span>
+            <input id="inB" class="num-in" type="text" autocomplete="off" spellcheck="false" aria-label="Hệ số B">
+            <span class="var">y</span>
+          </div>
+          <div class="mt-2.5 flex items-center gap-3">
+            <div class="inline-flex rounded-lg bg-slate-100 p-1" role="group" aria-label="Yêu cầu">
+              <button type="button" data-goal="max" class="goal-btn">Max</button>
+              <button type="button" data-goal="min" class="goal-btn">Min</button>
+            </div>
+            <span class="text-xs text-slate-500">Tìm <b id="goalText" class="text-slate-700">giá trị lớn nhất</b></span>
+          </div>
+        </section>
+
+        <!-- Hệ ràng buộc -->
+        <section>
+          <h2 class="sec-h"><span class="sec-no">2</span>Hệ ràng buộc<span id="consCount" class="ml-auto text-[11px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">0</span></h2>
+          <div id="consList" class="space-y-1.5"></div>
+          <button id="btnAdd" type="button" class="mt-2 w-full inline-flex justify-center items-center gap-1.5 text-sm font-semibold text-mint-dark border border-dashed border-mint hover:bg-mint-light rounded-lg py-2 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Thêm ràng buộc
+          </button>
+          <label class="mt-2 flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+            <input id="chkNonNeg" type="checkbox" class="w-4 h-4 accent-emerald-500">
+            Điều kiện không âm <i>x</i> ≥ 0, <i>y</i> ≥ 0
+          </label>
+          <p class="mt-1 text-[11px] text-slate-400">Nhận số nguyên, thập phân (1,5 hoặc 1.5) hoặc phân số (3/4).</p>
+        </section>
+
+        <!-- Xem trước -->
+        <section>
+          <h2 class="sec-h"><span class="sec-no">3</span>Bài toán</h2>
+          <div id="systemPreview" class="overflow-x-auto thin-scroll text-slate-800 rounded-lg bg-slate-50 border border-slate-100 px-3 py-1.5 min-h-[2.5rem]"></div>
+        </section>
+
+        <div id="inputErrors" class="hidden rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm px-3 py-2"></div>
+      </div>
+
+      <!-- Nút thao tác (dính đáy cột trái) -->
+      <div class="lg:sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-100 p-4 sm:px-5 grid grid-cols-[1fr_auto] gap-2">
+        <button id="btnSolve" type="button" class="inline-flex justify-center items-center gap-2 font-bold text-slate-900 bg-mint hover:bg-[#93dcbc] rounded-lg px-4 py-2.5 transition active:scale-[.98]">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg>
+          Giải bài toán
+        </button>
+        <button id="btnReset" type="button" title="Xóa dữ liệu, nhập bài mới" class="inline-flex justify-center items-center gap-1.5 text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 transition active:scale-[.98]">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Bài mới
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===================== CỘT PHẢI: ĐỒ THỊ · KẾT QUẢ · LỜI GIẢI ===================== -->
+    <section id="rightCol" class="relative lg:min-h-0 lg:overflow-y-auto thin-scroll p-3 sm:p-5 space-y-4" aria-label="Đồ thị, kết quả và lời giải">
+
+      <!-- Đồ thị -->
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Đồ thị miền nghiệm</h2>
+          <span class="hidden md:inline text-[11px] text-slate-400">Kéo để di chuyển · Cuộn / chụm 2 ngón để phóng to</span>
+          <div class="ml-auto flex items-center gap-1">
+            <button id="btnZoomIn" type="button" title="Phóng to" class="icon-btn">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button id="btnZoomOut" type="button" title="Thu nhỏ" class="icon-btn">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+            <button id="btnFit" type="button" title="Căn khung nhìn vừa miền nghiệm" class="icon-btn">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+            <button id="btnPng" type="button" title="Tải ảnh đồ thị (.png)" class="ml-1 inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-[13px] font-semibold bg-peach hover:bg-[#ffc59e] text-slate-800 transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+              <span class="hidden sm:inline">Tải ảnh (.png)</span><span class="sm:hidden">PNG</span>
+            </button>
+          </div>
+        </div>
+        <div id="plotWrap" class="relative w-full h-[56vh] min-h-[320px] lg:h-[calc(100vh-15.5rem)] lg:min-h-[400px] lg:max-h-[760px] bg-white">
+          <canvas id="plot" aria-label="Đồ thị miền nghiệm trên hệ trục Oxy" role="img"></canvas>
+        </div>
+        <div class="px-3 sm:px-4 py-2 border-t border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-slate-500">
+          <span class="inline-flex items-center gap-1.5"><span class="w-4 h-3 rounded-sm" style="background:rgba(255,140,170,.35);border:1px solid rgba(236,72,153,.5)"></span>Miền nghiệm <i>S</i></span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-4 h-3 rounded-sm border border-slate-300" style="background:repeating-linear-gradient(45deg,#94a3b8 0 1px,transparent 1px 4px)"></span>Phần bị gạch bỏ</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>Đỉnh</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-[3px] ring-emerald-200"></span>Điểm tối ưu</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-5 border-t-2 border-dashed border-slate-500"></span>Biên không lấy (&lt;, &gt;)</span>
+        </div>
+      </div>
+
+      <!-- Kết quả -->
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Kết quả</h2>
+          <div class="ml-auto flex items-center gap-1.5">
+            <button id="btnPrint" type="button" title="Báo cáo gồm đề bài và lời giải chi tiết 5 bước" class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-semibold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>
+              <span class="hidden sm:inline">Tải báo cáo / In PDF</span><span class="sm:hidden">PDF</span>
+            </button>
+          </div>
+        </div>
+        <div class="p-3 sm:p-4">
+          <div id="statusBox"></div>
+          <div id="tableBox" class="mt-3 overflow-x-auto thin-scroll rounded-lg border border-slate-100"></div>
+        </div>
+      </div>
+
+      <footer class="pb-2 text-center text-[11px] text-slate-400">
+        Hỗ trợ học tập chủ đề <b>Hệ bất phương trình bậc nhất hai ẩn &amp; bài toán tối ưu</b> · Tính toán chạy hoàn toàn trên trình duyệt.
+      </footer>
+    </section>
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed left-1/2 bottom-5 z-[60] -translate-x-1/2 translate-y-3 opacity-0 pointer-events-none bg-slate-900 text-white text-sm font-medium rounded-xl px-4 py-2.5 shadow-xl"></div>
+
+<!-- Vùng in (chỉ hiện khi in) -->
+<div id="printArea"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   1. TIỆN ÍCH CHUNG
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const PALETTE = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#14b8a6', '#ef4444', '#6366f1', '#d946ef', '#84cc16', '#f97316', '#06b6d4'];
+const LETTERS = 'ABCDEFGHIJKLMNPQRSTUVWXYZ'.split('');
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let uid = 0;
+
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; };
+const lcm = (a, b) => a / gcd(a, b) * b;
+const hyp = Math.hypot;
+
+/** Đọc số: hỗ trợ số nguyên, thập phân (dấu . hoặc ,), phân số a/b. Trả NaN nếu sai cú pháp. */
+function parseNum(raw) {
+  if (raw === null || raw === undefined) return NaN;
+  let s = String(raw).trim().replace(/\s+/g, '').replace(/[−–]/g, '-').replace(',', '.');
+  if (s === '') return NaN;
+  const num = '[+-]?(?:\\d+\\.?\\d*|\\.\\d+)';
+  if (new RegExp(`^${num}$`).test(s)) return parseFloat(s);
+  if (new RegExp(`^${num}/${num}$`).test(s)) {
+    const [p, q] = s.split('/').map(parseFloat);
+    if (q === 0) return NaN;
+    return p / q;
+  }
+  return NaN;
+}
+
+/** Xấp xỉ phân số bằng liên phân số (mẫu ≤ 1000). */
+function approxFrac(v) {
+  if (!isFinite(v)) return null;
+  if (Math.abs(v) < 1e-10) return { n: 0, d: 1 };
+  const sign = v < 0 ? -1 : 1, x = Math.abs(v);
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, b = x;
+  for (let i = 0; i < 25; i++) {
+    const a = Math.floor(b);
+    const h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > 1000) break;
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    if (Math.abs(x - h1 / k1) <= 1e-9 * Math.max(1, x)) return { n: sign * h1, d: k1 };
+    const fr = b - a;
+    if (fr < 1e-12) break;
+    b = 1 / fr;
+  }
+  return null;
+}
+/** Làm sạch sai số dấu phẩy động (3.9999999 → 4, 0.33333 → 1/3). */
+function clean(v) {
+  if (Math.abs(v) < 1e-10) return 0;
+  const f = approxFrac(v);
+  return f ? f.n / f.d : v;
+}
+function decStr(v, dp = 3) {
+  let s = (+v.toFixed(dp)).toString();
+  if (s.includes('e')) s = v.toPrecision(5);
+  return s.replace('.', ',');
+}
+/** Số dạng văn bản (dùng trên canvas): 4, -3/2, 1,234 */
+function numText(v) {
+  v = clean(v);
+  const f = approxFrac(v);
+  if (f) return f.d === 1 ? String(f.n) : `${f.n}/${f.d}`;
+  return decStr(v);
+}
+/** Số dạng TeX */
+function numTex(v) {
+  v = clean(v);
+  const f = approxFrac(v);
+  if (f) return f.d === 1 ? String(f.n) : `${f.n < 0 ? '-' : ''}\\frac{${Math.abs(f.n)}}{${f.d}}`;
+  return decStr(v).replace(',', '{,}');
+}
+const parenTex = v => (clean(v) < 0 ? `\\left(${numTex(v)}\\right)` : numTex(v));
+const parenText = v => (clean(v) < 0 ? `(${numText(v)})` : numText(v));
+
+/** Biểu thức tuyến tính a·x + b·y dạng TeX / text. */
+function linear(a, b, mode = 'tex', vx = 'x', vy = 'y') {
+  const parts = [];
+  [[a, vx], [b, vy]].forEach(([k, v]) => {
+    k = clean(k);
+    if (k === 0) return;
+    const neg = k < 0, abs = Math.abs(k);
+    let coef = '';
+    if (Math.abs(abs - 1) > 1e-12) {
+      if (mode === 'tex') coef = numTex(abs);
+      else { const f = approxFrac(abs); coef = f && f.d > 1 ? `(${numText(abs)})` : numText(abs); }
+    }
+    const sign = parts.length === 0 ? (neg ? '-' : '') : (neg ? ' - ' : ' + ');
+    parts.push(sign + coef + v);
+  });
+  return parts.join('') || '0';
+}
+const OP_TEX = { '<=': '\\le', '>=': '\\ge', '<': '<', '>': '>' };
+const OP_TEXT = { '<=': '≤', '>=': '≥', '<': '<', '>': '>' };
+const compare = (l, op, r) => {
+  const e = 1e-9 * (1 + Math.abs(l) + Math.abs(r));
+  if (op === '<=') return l <= r + e;
+  if (op === '>=') return l >= r - e;
+  if (op === '<') return l < r - e;
+  return l > r + e;
+};
+
+/** Render TeX bằng KaTeX, dự phòng chuyển về văn bản Unicode nếu KaTeX không tải được. */
+function texFallback(s) {
+  return s.replace(/\\begin\{cases\}/g, '{ ').replace(/\\end\{cases\}/g, ' }').replace(/\\\\/g, ' ; ')
+    .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1/$2)').replace(/\\left|\\right/g, '')
+    .replace(/\\Leftrightarrow/g, '⇔').replace(/\\Rightarrow/g, '⇒').replace(/\\infty/g, '∞')
+    .replace(/\\le/g, '≤').replace(/\\ge/g, '≥').replace(/\\cdot/g, '·').replace(/\\to/g, '→')
+    .replace(/\\in/g, '∈').replace(/\\vec\{([^}]*)\}/g, '$1⃗').replace(/\{,\}/g, ',')
+    .replace(/\\(max|min|sup|inf)/g, '$1').replace(/\\[a-zA-Z]+/g, ' ').replace(/[{}]/g, '').replace(/_/g, '');
+}
+function tex(s, display = false) {
+  if (window.katex) {
+    try { return katex.renderToString(s, { throwOnError: false, displayMode: display, strict: 'ignore' }); } catch (e) { /* dùng dự phòng */ }
+  }
+  return `<span style="font-family:'Times New Roman',serif">${escapeHtml(texFallback(s))}</span>`;
+}
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.style.opacity = '1'; t.style.transform = 'translate(-50%, 0)';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, 12px)'; }, 2200);
+}
+
+/* =====================================================================
+   2. TRẠNG THÁI & BÀI MẪU
+   ===================================================================== */
+const SAMPLES = [
+  { name: 'Ví dụ 1 – Miền tứ giác, tìm Max', A: '2', B: '3', goal: 'max', nonNeg: true,
+    rows: [['1', '1', '<=', '6'], ['1', '2', '<=', '8']] },
+  { name: 'Ví dụ 2 – Bài toán sản xuất (lợi nhuận lớn nhất)', A: '40', B: '30', goal: 'max', nonNeg: true,
+    rows: [['1', '1', '<=', '8'], ['3', '1', '<=', '18']] },
+  { name: 'Ví dụ 3 – Miền không bị chặn, tìm Min', A: '4', B: '3', goal: 'min', nonNeg: true,
+    rows: [['1', '1', '>=', '4'], ['2', '1', '>=', '6']] },
+  { name: 'Ví dụ 4 – Miền không bị chặn, không có Max', A: '1', B: '1', goal: 'max', nonNeg: true,
+    rows: [['1', '1', '>=', '4'], ['2', '1', '>=', '6']] },
+  { name: 'Ví dụ 5 – Vô số nghiệm tối ưu trên một cạnh', A: '1', B: '2', goal: 'max', nonNeg: true,
+    rows: [['1', '2', '<=', '10'], ['1', '0', '<=', '6']] },
+  { name: 'Ví dụ 6 – Bất phương trình chặt (không đạt Max)', A: '1', B: '1', goal: 'max', nonNeg: true,
+    rows: [['1', '1', '<', '4'], ['1', '-1', '<=', '2']] },
+  { name: 'Ví dụ 7 – Hệ vô nghiệm (miền rỗng)', A: '1', B: '1', goal: 'max', nonNeg: true,
+    rows: [['1', '1', '<=', '2'], ['1', '1', '>=', '5']] },
+  { name: 'Ví dụ 8 – Ngũ giác, hệ số phân số', A: '3/2', B: '-1', goal: 'min', nonNeg: true,
+    rows: [['1', '1', '<=', '7'], ['-1', '2', '<=', '8'], ['2', '-1', '<=', '8'], ['0', '1', '>=', '1']] }
+];
+
+const state = { A: '', B: '', goal: 'max', nonNeg: true, rows: [] };
+let R = null;                    // kết quả giải hiện tại
+let autoFit = true;              // tự căn khung nhìn sau khi giải
+
+function loadSample(s) {
+  state.A = s.A; state.B = s.B; state.goal = s.goal; state.nonNeg = s.nonNeg;
+  state.rows = s.rows.map(([a, b, op, c]) => ({ id: ++uid, a, b, op, c }));
+  syncInputsFromState();
+  autoFit = true;
+  run();
+}
+
+/* =====================================================================
+   3. GIAO DIỆN NHẬP LIỆU
+   ===================================================================== */
+const consList = $('#consList');
+
+function syncInputsFromState() {
+  $('#inA').value = state.A;
+  $('#inB').value = state.B;
+  $('#chkNonNeg').checked = state.nonNeg;
+  renderGoal();
+  renderRows();
+}
+
+function renderGoal() {
+  document.querySelectorAll('.goal-btn').forEach(b => {
+    const on = b.dataset.goal === state.goal;
+    b.classList.toggle('on-max', on && state.goal === 'max');
+    b.classList.toggle('on-min', on && state.goal === 'min');
+    b.setAttribute('aria-pressed', on);
+  });
+  $('#goalText').textContent = state.goal === 'max' ? 'giá trị lớn nhất (Max)' : 'giá trị nhỏ nhất (Min)';
+}
+
+function renderRows() {
+  consList.innerHTML = '';
+  if (!state.rows.length) {
+    consList.innerHTML = '<p class="text-sm text-slate-400 italic px-1">Chưa có ràng buộc nào. Nhấn “Thêm ràng buộc”.</p>';
+  }
+  state.rows.forEach((r, i) => {
+    const color = PALETTE[i % PALETTE.length];
+    const div = document.createElement('div');
+    div.className = 'cons-row flex items-center gap-1 sm:gap-1.5 rounded-lg px-1 py-1 hover:bg-slate-50 transition';
+    div.dataset.id = r.id;
+    const opts = ['<=', '>=', '<', '>'].map(o => `<option value="${o}" ${o === r.op ? 'selected' : ''}>${OP_TEXT[o]}</option>`).join('');
+    div.innerHTML = `
+      <span class="shrink-0 w-7 sm:w-8 text-center text-[11px] font-bold rounded-md py-1" style="background:${color}1f;color:${color}">d<sub>${i + 1}</sub></span>
+      <input data-k="a" class="num-in" type="text" autocomplete="off" spellcheck="false" value="${escapeHtml(r.a)}" aria-label="Hệ số a của d${i + 1}">
+      <span class="var">x +</span>
+      <input data-k="b" class="num-in" type="text" autocomplete="off" spellcheck="false" value="${escapeHtml(r.b)}" aria-label="Hệ số b của d${i + 1}">
+      <span class="var">y</span>
+      <select data-k="op" class="op-sel" aria-label="Dấu bất phương trình d${i + 1}">${opts}</select>
+      <input data-k="c" class="num-in" type="text" autocomplete="off" spellcheck="false" value="${escapeHtml(r.c)}" aria-label="Hằng số c của d${i + 1}">
+      <button type="button" data-del class="ml-auto shrink-0 w-8 h-8 grid place-items-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition" title="Xóa ràng buộc d${i + 1}" aria-label="Xóa ràng buộc d${i + 1}">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+      </button>`;
+    consList.appendChild(div);
+  });
+  $('#consCount').textContent = `${state.rows.length} ràng buộc`;
+}
+
+const scheduleRun = debounce(() => run(), 280);
+
+consList.addEventListener('input', e => {
+  const row = e.target.closest('.cons-row'); if (!row) return;
+  const r = state.rows.find(x => x.id === +row.dataset.id); if (!r) return;
+  r[e.target.dataset.k] = e.target.value;
+  e.target.classList.remove('in-error');
+  scheduleRun();
+});
+consList.addEventListener('change', e => {
+  if (e.target.matches('select')) {
+    const row = e.target.closest('.cons-row');
+    const r = state.rows.find(x => x.id === +row.dataset.id);
+    r.op = e.target.value; run();
+  }
+});
+consList.addEventListener('click', e => {
+  const btn = e.target.closest('[data-del]'); if (!btn) return;
+  const row = btn.closest('.cons-row');
+  state.rows = state.rows.filter(x => x.id !== +row.dataset.id);
+  renderRows(); run();
+});
+consList.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); autoFit = true; run(); } });
+
+$('#btnAdd').addEventListener('click', () => {
+  state.rows.push({ id: ++uid, a: '', b: '', op: '<=', c: '' });
+  renderRows();
+  const inputs = consList.querySelectorAll('.cons-row:last-child input');
+  inputs[0] && inputs[0].focus();
+});
+['A', 'B'].forEach(k => {
+  const el = $('#in' + k);
+  el.addEventListener('input', () => { state[k] = el.value; el.classList.remove('in-error'); scheduleRun(); });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') { autoFit = true; run(); } });
+});
+document.querySelectorAll('.goal-btn').forEach(b => b.addEventListener('click', () => { state.goal = b.dataset.goal; renderGoal(); run(); }));
+$('#chkNonNeg').addEventListener('change', e => { state.nonNeg = e.target.checked; autoFit = true; run(); });
+$('#btnSolve').addEventListener('click', () => { autoFit = true; run(); toastIfOk(); });
+$('#btnReset').addEventListener('click', () => {
+  state.A = ''; state.B = ''; state.goal = 'max'; state.nonNeg = true;
+  state.rows = [{ id: ++uid, a: '', b: '', op: '<=', c: '' }, { id: ++uid, a: '', b: '', op: '<=', c: '' }];
+  $('#sampleSel').value = '';
+  syncInputsFromState(); autoFit = true; run(true);
+  $('#inA').focus();
+});
+const sampleSel = $('#sampleSel');
+SAMPLES.forEach((s, i) => { const o = document.createElement('option'); o.value = i; o.textContent = s.name; sampleSel.appendChild(o); });
+sampleSel.addEventListener('change', () => { if (sampleSel.value !== '') loadSample(SAMPLES[+sampleSel.value]); });
+
+function toastIfOk() {
+  if (!R) return;
+  if (R.status === 'invalid') toast('Vui lòng sửa các ô nhập được tô đỏ.');
+  else if (R.status === 'empty') toast('Hệ bất phương trình vô nghiệm.');
+  else toast('Đã giải xong bài toán ✓');
+}
+
+/* =====================================================================
+   4. ĐỌC & KIỂM TRA DỮ LIỆU → MÔ HÌNH
+   ===================================================================== */
+/** Chuẩn hóa mọi ràng buộc về dạng nx·x + ny·y ≤ nc (có cờ strict). */
+function makeCons(a, b, op, c, extra) {
+  const sgn = (op === '<=' || op === '<') ? 1 : -1;
+  return Object.assign({ a, b, op, c, nx: sgn * a, ny: sgn * b, nc: sgn * c, strict: op === '<' || op === '>' }, extra);
+}
+
+function readModel(silent) {
+  const errors = [];
+  document.querySelectorAll('.in-error').forEach(e => e.classList.remove('in-error'));
+  const mark = (els, msg) => { if (!silent) [].concat(els).forEach(el => el && el.classList.add('in-error')); errors.push(msg); };
+  const describe = (raw) => String(raw).trim() === '' ? 'đang để trống' : `“${escapeHtml(raw)}” không đúng cú pháp số`;
+
+  const A = parseNum(state.A), B = parseNum(state.B);
+  if (isNaN(A)) mark($('#inA'), `Hệ số <b>A</b> của hàm mục tiêu ${describe(state.A)}.`);
+  if (isNaN(B)) mark($('#inB'), `Hệ số <b>B</b> của hàm mục tiêu ${describe(state.B)}.`);
+
+  const cons = [];
+  state.rows.forEach((r, i) => {
+    const rowEl = consList.querySelector(`[data-id="${r.id}"]`);
+    const v = {}; let bad = false;
+    ['a', 'b', 'c'].forEach(k => {
+      v[k] = parseNum(r[k]);
+      if (isNaN(v[k])) { bad = true; mark(rowEl && rowEl.querySelector(`[data-k="${k}"]`), `Ràng buộc <b>d${i + 1}</b>: hệ số <b>${k}</b> ${describe(r[k])}.`); }
+    });
+    if (!bad && Math.abs(v.a) < 1e-12 && Math.abs(v.b) < 1e-12) {
+      bad = true;
+      mark([rowEl && rowEl.querySelector('[data-k="a"]'), rowEl && rowEl.querySelector('[data-k="b"]')],
+        `Ràng buộc <b>d${i + 1}</b>: hai hệ số a, b không được đồng thời bằng 0 (không phải bất phương trình bậc nhất hai ẩn).`);
+    }
+    if (!bad) cons.push(makeCons(v.a, v.b, r.op, v.c, { user: true, index: i, label: `d${i + 1}`, color: PALETTE[i % PALETTE.length] }));
+  });
+  if (state.nonNeg) {
+    cons.push(makeCons(1, 0, '>=', 0, { axis: 'x', label: 'Oy' }));
+    cons.push(makeCons(0, 1, '>=', 0, { axis: 'y', label: 'Ox' }));
+  }
+  if (!state.rows.length && !state.nonNeg) errors.push('Hãy nhập ít nhất một ràng buộc hoặc bật điều kiện x ≥ 0, y ≥ 0.');
+  return { errors, model: errors.length ? null : { A, B, goal: state.goal, cons } };
+}
+
+/* =====================================================================
+   5. LÕI TOÁN HỌC – GIẢI BÀI TOÁN QHTT HAI BIẾN
+   ===================================================================== */
+function simplifyDir(d) {
+  const x = clean(d.x), y = clean(d.y);
+  const fx = approxFrac(x), fy = approxFrac(y);
+  if (fx && fy) {
+    const den = lcm(fx.d, fy.d);
+    let ix = Math.round(x * den), iy = Math.round(y * den);
+    const g = gcd(ix, iy) || 1; ix /= g; iy /= g;
+    if (Math.abs(ix) < 1e6 && Math.abs(iy) < 1e6) return { x: ix, y: iy };
+  }
+  return { x, y };
+}
+const lineName = k => k.axis === 'x' ? 'Oy' : k.axis === 'y' ? 'Ox' : `d_{${k.index + 1}}`;
+const lineNameText = k => k.axis === 'x' ? 'Oy' : k.axis === 'y' ? 'Ox' : `d${k.index + 1}`;
+const eqTex = k => k.axis === 'x' ? 'x = 0' : k.axis === 'y' ? 'y = 0' : `${linear(k.a, k.b, 'tex')} = ${numTex(k.c)}`;
+const consTex = k => `${linear(k.a, k.b, 'tex')} ${OP_TEX[k.op]} ${numTex(k.c)}`;
+
+function solveLP(model) {
+  const { cons, A, B } = model;
+  const nrm = k => hyp(k.nx, k.ny);
+  const tol = (k, p) => 1e-7 * (1 + Math.abs(k.nc) + nrm(k) * hyp(p.x, p.y));
+  const slack = (k, p) => k.nx * p.x + k.ny * p.y - k.nc;            // ≤ 0 là thỏa mãn
+  const inClosure = p => cons.every(k => slack(k, p) <= tol(k, p));   // thuộc bao đóng của miền
+  const inStrict = p => cons.every(k => k.strict ? slack(k, p) < -tol(k, p) : slack(k, p) <= tol(k, p));
+  const onLine = (k, p) => Math.abs(slack(k, p)) <= 10 * tol(k, p);
+  const parallel = (ki, kj) => Math.abs(ki.nx * kj.ny - ki.ny * kj.nx) <= 1e-12 * nrm(ki) * nrm(kj);
+
+  /* --- 5.1 Tìm giao điểm từng cặp đường biên, lọc những điểm thỏa mãn hệ --- */
+  const verts = [];
+  for (let i = 0; i < cons.length; i++) {
+    for (let j = i + 1; j < cons.length; j++) {
+      const ki = cons[i], kj = cons[j];
+      if (parallel(ki, kj)) continue;
+      const det = ki.nx * kj.ny - ki.ny * kj.nx;
+      const p = { x: clean((ki.nc * kj.ny - kj.nc * ki.ny) / det), y: clean((ki.nx * kj.nc - kj.nx * ki.nc) / det) };
+      if (!inClosure(p)) continue;
+      if (!verts.some(v => hyp(v.x - p.x, v.y - p.y) <= 1e-7 * (1 + hyp(p.x, p.y)))) verts.push(p);
+    }
+  }
+  verts.forEach(v => {
+    v.lines = cons.map((k, i) => onLine(k, v) ? i : -1).filter(i => i >= 0);
+    v.pair = null;
+    outer: for (let a = 0; a < v.lines.length; a++) for (let b = a + 1; b < v.lines.length; b++) {
+      if (!parallel(cons[v.lines[a]], cons[v.lines[b]])) { v.pair = [v.lines[a], v.lines[b]]; break outer; }
+    }
+    v.included = inStrict(v);
+  });
+
+  /* --- 5.2 Miền không có đỉnh (nửa mặt phẳng / dải song song): lấy điểm đại diện trên các đường biên --- */
+  const foot = [];
+  if (!verts.length) {
+    cons.forEach((k, i) => {
+      const n2 = k.nx * k.nx + k.ny * k.ny;
+      const p = { x: clean(k.nx * k.nc / n2), y: clean(k.ny * k.nc / n2) };
+      if (inClosure(p) && !foot.some(f => hyp(f.x - p.x, f.y - p.y) < 1e-9)) { p.lines = [i]; p.line = i; p.included = inStrict(p); foot.push(p); }
+    });
+  }
+  if (!verts.length && !foot.length) return { status: 'empty', reason: 'closure', model, cons };
+
+  /* --- 5.3 Nón lùi xa (recession cone): các hướng mà miền kéo dài vô hạn --- */
+  const inCone = u => cons.every(k => k.nx * u.x + k.ny * u.y <= 1e-9 * nrm(k));
+  const rays = [];
+  const addRay = raw => {
+    const L = hyp(raw.x, raw.y); if (L < 1e-15) return;
+    const u = { x: raw.x / L, y: raw.y / L };
+    if (!inCone(u)) return;
+    if (rays.some(r => Math.abs(r.u.x - u.x) < 1e-9 && Math.abs(r.u.y - u.y) < 1e-9)) return;
+    rays.push({ u, raw: simplifyDir(raw) });
+  };
+  cons.forEach(k => { addRay({ x: -k.ny, y: k.nx }); addRay({ x: k.ny, y: -k.nx }); });
+  const bounded = rays.length === 0;
+
+  /* --- 5.4 Sắp xếp các đỉnh theo thứ tự đa giác lồi & đặt tên --- */
+  let pts = verts.length ? verts : foot;
+  let q = { x: pts.reduce((s, p) => s + p.x, 0) / pts.length, y: pts.reduce((s, p) => s + p.y, 0) / pts.length };
+  const span = Math.max(1, ...pts.map(p => hyp(p.x - q.x, p.y - q.y)));
+  if (!bounded) {
+    const s = rays.reduce((acc, r) => ({ x: acc.x + r.u.x, y: acc.y + r.u.y }), { x: 0, y: 0 });
+    const L = hyp(s.x, s.y);
+    if (L > 1e-9) q = { x: q.x + s.x / L * span, y: q.y + s.y / L * span };
+  }
+  if (verts.length) {
+    const ang = p => Math.atan2(p.y - q.y, p.x - q.x);
+    pts.sort((a, b) => ang(a) - ang(b));
+    if (pts.length > 1) {
+      if (!bounded) {               // chuỗi đỉnh của miền không bị chặn: bắt đầu sau "khoảng hở" lớn nhất
+        let gi = 0, gmax = -1;
+        for (let i = 0; i < pts.length; i++) {
+          let d = ang(pts[(i + 1) % pts.length]) - ang(pts[i]); if (d <= 0) d += 2 * Math.PI;
+          if (d > gmax) { gmax = d; gi = i; }
+        }
+        pts = pts.slice(gi + 1).concat(pts.slice(0, gi + 1));
+      } else {
+        const oi = pts.findIndex(p => p.x === 0 && p.y === 0);
+        if (oi > 0) pts = pts.slice(oi).concat(pts.slice(0, oi));
+      }
+    }
+    let li = 0;
+    pts.forEach(p => { p.name = (p.x === 0 && p.y === 0) ? 'O' : (LETTERS[li++] || `P_${li}`); });
+  } else {
+    pts.forEach((p, i) => { p.name = `M_${i + 1}`; });
+  }
+
+  /* --- 5.5 Kiểm tra miền nghiệm thực sự khác rỗng khi có bất phương trình chặt --- */
+  const hasStrict = cons.some(k => k.strict);
+  if (hasStrict) {
+    const tests = [...pts, q];
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) tests.push({ x: (pts[i].x + pts[j].x) / 2, y: (pts[i].y + pts[j].y) / 2 });
+    pts.forEach(p => {
+      tests.push({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 });
+      rays.forEach(r => tests.push({ x: p.x + r.u.x * span * 0.5, y: p.y + r.u.y * span * 0.5 }));
+      cons.forEach(k => { const L = nrm(k); tests.push({ x: p.x - k.nx / L * span * 0.1, y: p.y - k.ny / L * span * 0.1 }); });
+    });
+    if (!tests.some(inStrict)) return { status: 'empty', reason: 'strict', model, cons };
+  }
+
+  /* --- 5.6 Đánh giá hàm mục tiêu theo chiều sign (+1: Max, -1: Min) --- */
+  function analyze(sign) {
+    const g = { x: sign * A, y: sign * B }, gL = hyp(g.x, g.y);
+    if (gL < 1e-12) return { kind: 'constant', sign, value: 0 };
+    const gu = { x: g.x / gL, y: g.y / gL };
+    const cands = rays.slice();
+    if (inCone(gu)) cands.push({ u: gu, raw: simplifyDir(g), fromObj: true });
+    const esc = cands.find(r => gu.x * r.u.x + gu.y * r.u.y > 1e-9);
+    if (esc) {
+      const from = pts[0];
+      return { kind: 'unbounded', sign, ray: esc, from, k: clean(A * esc.raw.x + B * esc.raw.y) };
+    }
+    const vals = pts.map(p => g.x * p.x + g.y * p.y);
+    const best = Math.max(...vals), t = 1e-7 * (1 + Math.abs(best));
+    const opt = pts.filter((p, i) => vals[i] >= best - t);
+    const value = clean(sign * best);
+    let face;
+    if (!verts.length) {
+      const p = opt[0], k = cons[p.line], L = nrm(k);
+      face = { type: 'line', p, u: { x: -k.ny / L, y: k.nx / L }, line: k };
+    } else if (opt.length >= 2) {
+      let bi = 0, bj = 1, bd = -1;
+      for (let i = 0; i < opt.length; i++) for (let j = i + 1; j < opt.length; j++) {
+        const d = hyp(opt[i].x - opt[j].x, opt[i].y - opt[j].y); if (d > bd) { bd = d; bi = i; bj = j; }
+      }
+      face = { type: 'segment', p1: opt[bi], p2: opt[bj] };
+    } else {
+      const zr = rays.find(r => Math.abs(gu.x * r.u.x + gu.y * r.u.y) <= 1e-9);
+      face = zr ? { type: 'ray', p: opt[0], ray: zr } : { type: 'point', p: opt[0] };
+    }
+    let tests;
+    if (face.type === 'point') tests = [face.p];
+    else if (face.type === 'segment') tests = [face.p1, face.p2, { x: (face.p1.x + face.p2.x) / 2, y: (face.p1.y + face.p2.y) / 2 }];
+    else if (face.type === 'ray') tests = [face.p, { x: face.p.x + face.ray.u.x * span, y: face.p.y + face.ray.u.y * span }];
+    else tests = [face.p, { x: face.p.x + face.u.x * span, y: face.p.y + face.u.y * span }, { x: face.p.x - face.u.x * span, y: face.p.y - face.u.y * span }];
+    const attained = tests.some(inStrict);
+    return { kind: 'finite', sign, value, face, opt, attained };
+  }
+
+  const sign = model.goal === 'max' ? 1 : -1;
+  return {
+    status: 'ok', model, cons, verts, foot, pts, rays, bounded, q, span, hasStrict,
+    primary: analyze(sign), secondary: analyze(-sign)
+  };
+}
+
+/* =====================================================================
+   6. ĐIỀU PHỐI: ĐỌC → GIẢI → HIỂN THỊ
+   ===================================================================== */
+function run(silent) {
+  const { errors, model } = readModel(silent);
+  renderErrors(silent ? [] : errors);
+  renderPreview(model);
+  R = errors.length ? { status: 'invalid', errors } : solveLP(model);
+  if (autoFit) fitView();
+  needStatic = true;
+  renderResults();
+}
+
+function renderErrors(errors) {
+  const box = $('#inputErrors');
+  if (!errors.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.classList.remove('hidden');
+  box.innerHTML = `<div class="font-semibold mb-1">⚠ Dữ liệu nhập chưa hợp lệ:</div><ul class="list-disc pl-5 space-y-0.5">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+}
+
+function systemTex(cons) {
+  return `\\begin{cases} ${cons.map(k => k.axis === 'x' ? 'x \\ge 0' : k.axis === 'y' ? 'y \\ge 0' : consTex(k)).join(' \\\\ ')} \\end{cases}`;
+}
+function renderPreview(model) {
+  const el = $('#systemPreview');
+  if (!model) { el.innerHTML = '<span class="text-sm text-slate-400 italic">Hoàn thiện các ô nhập để xem hệ bất phương trình.</span>'; return; }
+  const F = `F(x;y) = ${linear(model.A, model.B, 'tex')} \\;\\to\\; \\${model.goal}`;
+  el.innerHTML = `<div class="flex flex-wrap items-center gap-x-6 gap-y-1">${tex(systemTex(model.cons), true)}<div class="text-sm">${tex(F)}</div></div>`;
+}
+
+/* ---------------- Khung trạng thái & bảng kết quả ---------------- */
+const goalWord = s => s > 0 ? 'giá trị lớn nhất' : 'giá trị nhỏ nhất';
+const goalShort = s => s > 0 ? 'Max' : 'Min';
+const ptTex = p => `${p.name}(${numTex(p.x)};${numTex(p.y)})`;
+const ptText = p => `${p.name.replace('_', '')}(${numText(p.x)};${numText(p.y)})`;
+
+function shapeText(R) {
+  const n = R.verts.length;
+  if (!n) return 'Miền nghiệm không có đỉnh (nửa mặt phẳng hoặc dải song song)';
+  const name = R.pts.map(p => p.name).join('');
+  if (!R.bounded) return `Miền nghiệm không bị chặn, có ${n} đỉnh`;
+  if (n === 1) return `Miền nghiệm chỉ gồm một điểm ${name}`;
+  if (n === 2) return `Miền nghiệm suy biến thành đoạn thẳng ${name}`;
+  const names = { 3: 'tam giác', 4: 'tứ giác', 5: 'ngũ giác', 6: 'lục giác' };
+  return `Miền nghiệm là ${names[n] || `đa giác ${n} đỉnh`} ${name}`;
+}
+
+function faceTextHTML(f) {
+  if (f.type === 'point') return `tại ${tex(ptTex(f.p))}`;
+  if (f.type === 'segment') return `tại mọi điểm thuộc đoạn thẳng ${tex(f.p1.name + f.p2.name)}`;
+  if (f.type === 'ray') return `tại mọi điểm thuộc tia xuất phát từ ${tex(f.p.name)} theo hướng ${tex(`\\vec{u} = (${numTex(f.ray.raw.x)};${numTex(f.ray.raw.y)})`)}`;
+  return `tại mọi điểm thuộc đường thẳng ${tex(eqTex(f.line))}`;
+}
+
+function primaryBoxHTML(an, R) {
+  const s = an.sign;
+  const box = (cls, icon, title, body) => `<div class="rounded-xl border ${cls} px-3.5 py-3"><div class="font-bold flex items-start gap-2"><span>${icon}</span><span>${title}</span></div>${body ? `<div class="mt-1 text-sm leading-relaxed">${body}</div>` : ''}</div>`;
+  if (an.kind === 'constant') return box('bg-sky-50 border-sky-200 text-sky-800', 'ℹ', 'Hàm mục tiêu là hằng số F ≡ 0', 'Mọi điểm thuộc miền nghiệm S đều là phương án tối ưu (vô số nghiệm).');
+  if (an.kind === 'unbounded') {
+    const r = an.ray.raw;
+    return box('bg-amber-50 border-amber-200 text-amber-800', '⚠', `Miền nghiệm không bị chặn ⇒ F không có ${goalWord(s)}`,
+      `Dọc theo hướng ${tex(`\\vec{u} = (${numTex(r.x)};${numTex(r.y)})`)} các điểm vẫn thuộc S, còn F thay đổi ${tex(`${numTex(an.k)}`)} đơn vị mỗi bước nên ${tex(`F \\to ${s > 0 ? '+' : '-'}\\infty`)}.`);
+  }
+  const v = numTex(an.value);
+  if (!an.attained) {
+    return box('bg-amber-50 border-amber-200 text-amber-800', '⚠', `F không đạt ${goalWord(s)} trên S`,
+      `Giá trị ${tex(v)} chỉ đạt được trên bờ của bất phương trình chặt (không thuộc S). Ta có ${tex(`F(x;y) ${s > 0 ? '<' : '>'} ${v}`)} với mọi ${tex('(x;y) \\in S')} và F tiến gần tùy ý tới ${tex(v)} (${s > 0 ? 'sup' : 'inf'} F = ${tex(v)}).`);
+  }
+  if (an.face.type === 'point') {
+    return box('bg-mint-light border-mint text-emerald-900', '★', `${goalShort(s)} F = ${numText(an.value)}`,
+      `F đạt ${goalWord(s)} bằng ${tex(v)} ${faceTextHTML(an.face)}, tức ${tex(`x = ${numTex(an.face.p.x)},\\ y = ${numTex(an.face.p.y)}`)}.`);
+  }
+  return box('bg-sky-50 border-sky-200 text-sky-900', '∞', `Vô số nghiệm tối ưu: ${goalShort(s)} F = ${numText(an.value)}`,
+    `Đường mức ${tex(`F = ${v}`)} trùng với một cạnh biên của miền nghiệm, nên F đạt ${goalWord(s)} ${faceTextHTML(an.face)}.`);
+}
+
+function secondaryNote(an) {
+  if (an.kind === 'constant') return '';
+  if (an.kind === 'unbounded') return `F không có ${goalWord(an.sign)} (F → ${an.sign > 0 ? '+∞' : '−∞'}).`;
+  if (!an.attained) return `F không đạt ${goalWord(an.sign)} (${an.sign > 0 ? 'sup' : 'inf'} = ${numText(an.value)}).`;
+  const where = an.face.type === 'point' ? `tại ${ptText(an.face.p)}` : 'tại vô số điểm';
+  return `${goalWord(an.sign).replace(/^./, c => c.toUpperCase())} của F là ${numText(an.value)} ${where}.`;
+}
+
+function renderResults() {
+  const sb = $('#statusBox'), tb = $('#tableBox');
+  if (!R || R.status === 'invalid') {
+    sb.innerHTML = `<div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 px-3.5 py-3 text-sm"><b>Chưa thể giải.</b> Hãy kiểm tra các ô nhập được tô đỏ ở cột bên trái.</div>`;
+    tb.innerHTML = ''; tb.classList.add('hidden');
+    return;
+  }
+  if (R.status === 'empty') {
+    sb.innerHTML = `<div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 px-3.5 py-3">
+      <div class="font-bold">✕ Hệ bất phương trình vô nghiệm – miền nghiệm S rỗng</div>
+      <div class="text-sm mt-1">${R.reason === 'strict' ? 'Phần giao chỉ nằm trên các đường biên bị loại do dấu bất phương trình chặt (<, >).' : 'Các nửa mặt phẳng nghiệm không có điểm chung.'} Bài toán không có phương án chấp nhận được, do đó không có giá trị tối ưu.</div></div>`;
+    tb.innerHTML = ''; tb.classList.add('hidden');
+    return;
+  }
+  const chips = [
+    `<span class="inline-flex items-center gap-1 rounded-full bg-blush-light text-rose-600 px-2.5 py-1 text-xs font-semibold">${escapeHtml(shapeText(R))}</span>`,
+    `<span class="inline-flex items-center gap-1 rounded-full ${R.bounded ? 'bg-mint-light text-mint-dark' : 'bg-amber-50 text-amber-700'} px-2.5 py-1 text-xs font-semibold">${R.bounded ? 'Bị chặn' : 'Không bị chặn'}</span>`
+  ];
+  const sec = secondaryNote(R.secondary);
+  sb.innerHTML = `<div class="flex flex-wrap gap-1.5 mb-2.5">${chips.join('')}</div>${primaryBoxHTML(R.primary, R)}
+    ${sec ? `<p class="mt-2 text-xs text-slate-500"><b>Tham khảo:</b> ${escapeHtml(sec)}</p>` : ''}`;
+  tb.classList.remove('hidden');
+  tb.innerHTML = tableHTML(R);
+}
+
+function tableHTML(R) {
+  const m = R.model, prim = R.primary;
+  const optSet = new Set(prim.kind === 'finite' ? prim.opt : (prim.kind === 'constant' ? R.pts : []));
+  const rows = R.pts.map(p => {
+    const val = clean(m.A * p.x + m.B * p.y);
+    const isOpt = optSet.has(p);
+    let cls = '', note = '';
+    if (isOpt && prim.kind === 'finite' && !prim.attained) { cls = 'sup-row'; note = `<span class="text-amber-700">${prim.sign > 0 ? 'sup' : 'inf'} (không đạt)</span>`; }
+    else if (isOpt) { cls = 'opt-row'; note = `<span class="inline-flex items-center gap-1 rounded-full bg-mint text-emerald-900 px-2 py-0.5 text-xs">★ ${goalShort(prim.sign || 1)}</span>`; }
+    if (!p.included) { if (!isOpt) cls = 'excl-row'; note += ` <span class="text-xs italic text-slate-400">∉ S (biên không lấy)</span>`; }
+    const lines = (p.pair || p.lines || []).map(i => lineNameText(R.cons[i])).join(' ∩ ');
+    return `<tr class="${cls}">
+      <td class="font-bold">${tex(p.name)}</td>
+      <td>${tex(`(${numTex(p.x)};${numTex(p.y)})`)}</td>
+      <td class="text-xs text-slate-500 whitespace-nowrap">${escapeHtml(lines)}</td>
+      <td>${tex(`${parenTex(m.A)}\\cdot ${parenTex(p.x)} + ${parenTex(m.B)}\\cdot ${parenTex(p.y)} = ${numTex(val)}`)}</td>
+      <td>${note}</td></tr>`;
+  }).join('');
+  return `<table class="res-table"><thead><tr><th>Đỉnh</th><th>Tọa độ (x;y)</th><th>Giao của</th><th>F(x;y) = ${escapeHtml(linear(m.A, m.B, 'text'))}</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* =====================================================================
+   7. LỜI GIẢI CHI TIẾT 5 BƯỚC (dùng cho Modal & bản in PDF)
+   ===================================================================== */
+function halfPlaneDesc(k) {
+  if (k.axis === 'x') return `Miền nghiệm của ${tex('x \\ge 0')} là nửa mặt phẳng bên phải trục ${tex('Oy')} (kể cả trục ${tex('Oy')}); gạch bỏ phần bên trái trục ${tex('Oy')}.`;
+  if (k.axis === 'y') return `Miền nghiệm của ${tex('y \\ge 0')} là nửa mặt phẳng phía trên trục ${tex('Ox')} (kể cả trục ${tex('Ox')}); gạch bỏ phần phía dưới trục ${tex('Ox')}.`;
+  const name = lineName(k);
+  const a = clean(k.a), b = clean(k.b), c = clean(k.c);
+  let s = `Vẽ đường thẳng ${tex(`${name}: ${eqTex(k)}`)}`;
+  if (a !== 0 && b !== 0 && c !== 0) s += ` đi qua hai điểm ${tex(`(${numTex(c / a)};0)`)} và ${tex(`(0;${numTex(c / b)})`)}.`;
+  else if (a !== 0 && b !== 0) s += ` đi qua gốc tọa độ ${tex('O(0;0)')} và điểm ${tex(`(${numTex(b)};${numTex(-a)})`)}.`;
+  else if (a === 0) s += c === 0 ? ` (chính là trục ${tex('Ox')}).` : ` song song với trục ${tex('Ox')}: ${tex(`y = ${numTex(c / b)}`)}.`;
+  else s += c === 0 ? ` (chính là trục ${tex('Oy')}).` : ` song song với trục ${tex('Oy')}: ${tex(`x = ${numTex(c / a)}`)}.`;
+  let P = { x: 0, y: 0 }, Pn = 'O', Pt = 'O(0;0)';
+  if (c === 0) { if (a !== 0) { P = { x: 1, y: 0 }; Pn = 'M'; Pt = 'M(1;0)'; } else { P = { x: 0, y: 1 }; Pn = 'M'; Pt = 'M(0;1)'; } }
+  const lhs = clean(k.a * P.x + k.b * P.y);
+  const ok = compare(lhs, k.op, k.c);
+  s += ` Thay tọa độ điểm ${tex(Pt)} vào bất phương trình ${tex(consTex(k))} ta được ${tex(`${numTex(lhs)} ${OP_TEX[k.op]} ${numTex(c)}`)} là mệnh đề <b>${ok ? 'đúng' : 'sai'}</b>.`;
+  s += ` Vậy miền nghiệm là nửa mặt phẳng bờ ${tex(name)} <b>${ok ? 'chứa' : 'không chứa'}</b> điểm ${tex(Pn)} (${k.strict ? '<b>không kể</b>' : 'kể cả'} bờ ${tex(name)}); gạch bỏ nửa mặt phẳng còn lại.`;
+  return s;
+}
+
+function buildSolution(R, imgURL) {
+  const m = R.model, A = m.A, B = m.B, s = m.goal === 'max' ? 1 : -1;
+  const step = (n, title, body) => `<div class="step"><div class="step-head"><span class="step-no">Bước ${n}.</span> <span class="step-title">${title}.</span></div>${body}</div>`;
+  let h = '<div class="sol-title">Lời giải</div>';
+
+  h += step(1, 'Xác định hàm mục tiêu',
+    `<p>Hàm mục tiêu: ${tex(`F(x;y) = ${linear(A, B, 'tex')}`)} với hệ số ${tex(`A = ${numTex(A)},\\; B = ${numTex(B)}`)}.</p>`);
+
+  h += step(2, 'Xác định yêu cầu bài toán',
+    `<p>Tìm <b>${goalWord(s)}</b> (${goalShort(s)}) của ${tex('F(x;y)')} khi ${tex('(x;y)')} thuộc miền nghiệm ${tex('S')} của hệ ràng buộc, đồng thời chỉ ra phương án tối ưu (cặp ${tex('(x;y)')} để F đạt giá trị đó).</p>`);
+
+  h += step(3, 'Hệ bất phương trình bậc nhất hai ẩn (ràng buộc)',
+    `<p>Các điều kiện ràng buộc của bài toán:</p><div class="math-block">${tex(systemTex(m.cons), true)}</div>
+     <p>Đây là hệ gồm ${m.cons.length} bất phương trình bậc nhất hai ẩn ${tex('x, y')}. Mỗi cặp ${tex('(x;y)')} thỏa mãn hệ gọi là một <i>phương án chấp nhận được</i>.</p>`);
+
+  // ---------- Bước 4 ----------
+  let b4 = `<p>Biểu diễn miền nghiệm của từng bất phương trình trên mặt phẳng tọa độ ${tex('Oxy')}:</p><ul>${m.cons.map(k => `<li>${halfPlaneDesc(k)}</li>`).join('')}</ul>`;
+  if (R.status === 'empty') {
+    b4 += `<p>Sau khi gạch bỏ, mọi phần của mặt phẳng đều bị gạch: giao của các nửa mặt phẳng trên là <b>tập rỗng</b>${R.reason === 'strict' ? ' (phần chung chỉ nằm trên các bờ bị loại do bất phương trình chặt)' : ''}. Vậy hệ bất phương trình <b>vô nghiệm</b>.</p>`;
+    if (imgURL) b4 += `<img class="graph-img" src="${imgURL}" alt="Đồ thị các đường biên">`;
+  } else {
+    b4 += `<p>Miền nghiệm ${tex('S')} của hệ là phần giao của các miền nghiệm trên, tức là phần <b>không bị gạch</b> sau khi biểu diễn các bất phương trình trên mặt phẳng tọa độ.</p>`;
+    if (imgURL) b4 += `<img class="graph-img" src="${imgURL}" alt="Đồ thị miền nghiệm">`;
+    if (R.verts.length) {
+      b4 += `<p><b>Tìm các đỉnh (phương án cực biên)</b> – giao điểm của các đường biên thỏa mãn hệ:</p><ul>`;
+      R.verts.forEach(v => {
+        if (!v.pair) return;
+        const [i, j] = v.pair, ki = R.cons[i], kj = R.cons[j];
+        b4 += `<li>${tex(v.name)} là giao điểm của ${tex(lineName(ki))} và ${tex(lineName(kj))}: ${tex(`\\begin{cases} ${eqTex(ki)} \\\\ ${eqTex(kj)} \\end{cases} \\Leftrightarrow \\begin{cases} x = ${numTex(v.x)} \\\\ y = ${numTex(v.y)} \\end{cases}`)} ${tex('\\Rightarrow')} ${tex(ptTex(v))}${v.included ? '' : ' <i class="note">(điểm này nằm trên bờ của bất phương trình chặt nên không thuộc S)</i>'}.</li>`;
+      });
+      b4 += `</ul>`;
+      const n = R.verts.length, nm = R.pts.map(p => p.name).join('');
+      if (R.bounded) {
+        const names = { 3: 'tam giác', 4: 'tứ giác', 5: 'ngũ giác', 6: 'lục giác' };
+        if (n >= 3) b4 += `<p>Vậy ${tex('S')} là miền ${names[n] || `đa giác ${n} đỉnh`} ${tex(nm)} (đa giác lồi, các đỉnh được sắp theo thứ tự trên biên).</p>`;
+        else if (n === 2) b4 += `<p>Miền ${tex('S')} suy biến thành đoạn thẳng ${tex(nm)}.</p>`;
+        else b4 += `<p>Miền ${tex('S')} chỉ gồm một điểm ${tex(nm)}.</p>`;
+      } else {
+        b4 += `<p>Miền ${tex('S')} <b>không bị chặn</b>, có các đỉnh ${tex(R.pts.map(ptTex).join(',\\ '))} và kéo dài vô tận theo ${R.rays.length > 1 ? 'các hướng' : 'hướng'} ${R.rays.map(r => tex(`(${numTex(r.raw.x)};${numTex(r.raw.y)})`)).join(', ')}.</p>`;
+      }
+    } else {
+      b4 += `<p>Miền ${tex('S')} không có đỉnh nào (là nửa mặt phẳng hoặc dải nằm giữa hai đường thẳng song song) và không bị chặn. Chọn các điểm đại diện trên đường biên: ${tex(R.pts.map(ptTex).join(',\\ '))}.</p>`;
+    }
+  }
+  h += step(4, 'Vẽ miền nghiệm và xác định các phương án cực biên', b4);
+
+  // ---------- Bước 5 ----------
+  let b5 = '';
+  if (R.status === 'empty') {
+    b5 = `<div class="conclusion bad">Vì miền nghiệm rỗng nên bài toán <b>không có phương án chấp nhận được</b>, do đó F không có ${goalWord(s)}.</div>`;
+  } else {
+    b5 += R.bounded
+      ? `<p>Theo lý thuyết: ${goalWord(s)} của biểu thức ${tex('F(x;y) = Ax + By')} trên một miền đa giác lồi đạt được tại một trong các <b>đỉnh</b> của đa giác đó. Tính giá trị của F tại các đỉnh:</p>`
+      : `<p>Với miền không bị chặn, nếu F đạt ${goalWord(s)} thì giá trị đó đạt tại một đỉnh của ${tex('S')}; tuy nhiên cần kiểm tra thêm F có tăng (giảm) vô hạn dọc theo các hướng kéo dài của miền hay không. Tính giá trị của F tại các ${R.verts.length ? 'đỉnh' : 'điểm đại diện'}:</p>`;
+    b5 += `<div class="table-wrap">${tableHTML(R)}</div>`;
+    b5 += conclusionHTML(R.primary, R);
+  }
+  h += step(5, 'So sánh, kết luận', b5);
+  return h;
+}
+
+function conclusionHTML(an, R) {
+  const s = an.sign, op = s > 0 ? '\\max' : '\\min';
+  if (an.kind === 'constant') return `<div class="conclusion">${tex('F(x;y) \\equiv 0')} trên ${tex('S')}, nên mọi phương án chấp nhận được đều là phương án tối ưu; ${goalWord(s)} của F bằng ${tex('0')}.</div>`;
+  if (an.kind === 'unbounded') {
+    const p = an.from, r = an.ray.raw, F0 = clean(R.model.A * p.x + R.model.B * p.y);
+    return `<div class="conclusion warn">Miền ${tex('S')} không bị chặn. Xét các điểm ${tex(`M_t\\left(${numTex(p.x)} + ${parenTex(r.x)}t;\\ ${numTex(p.y)} + ${parenTex(r.y)}t\\right)`)} với ${tex('t \\ge 0')}; chúng đều thuộc ${tex('S')} vì ${tex(`\\vec{u} = (${numTex(r.x)};${numTex(r.y)})`)} là hướng kéo dài của miền. Khi đó
+      ${tex(`F(M_t) = ${numTex(F0)} ${an.k >= 0 ? '+' : '-'} ${numTex(Math.abs(an.k))}\\,t \\to ${s > 0 ? '+' : '-'}\\infty`)} khi ${tex('t \\to +\\infty')}.<br><b>Kết luận:</b> F <b>không có ${goalWord(s)}</b> trên miền ${tex('S')}.${secondaryLine(R.secondary)}</div>`;
+  }
+  const v = numTex(an.value);
+  if (!an.attained) {
+    return `<div class="conclusion warn">Giá trị ${tex(v)} chỉ đạt được tại các điểm nằm trên bờ của bất phương trình chặt (không thuộc ${tex('S')}). Do đó ${tex(`F(x;y) ${s > 0 ? '<' : '>'} ${v}`)} với mọi ${tex('(x;y)\\in S')} và F có thể tiến gần tùy ý đến ${tex(v)}.<br><b>Kết luận:</b> F <b>không đạt ${goalWord(s)}</b> trên ${tex('S')} (${s > 0 ? 'cận trên đúng' : 'cận dưới đúng'} bằng ${tex(v)}).${secondaryLine(R.secondary)}</div>`;
+  }
+  const f = an.face;
+  if (f.type === 'point') {
+    return `<div class="conclusion">So sánh các giá trị trên, ta được ${tex(`${op}_{S} F(x;y) = F(${numTex(f.p.x)};${numTex(f.p.y)}) = ${v}`)}.<br><b>Kết luận:</b> ${goalWord(s).replace(/^./, c => c.toUpperCase())} của F là ${tex(v)}, đạt được khi ${tex(`x = ${numTex(f.p.x)},\\ y = ${numTex(f.p.y)}`)} (tại đỉnh ${tex(f.p.name)}).${secondaryLine(R.secondary)}</div>`;
+  }
+  let where = '';
+  if (f.type === 'segment') where = `F đạt ${goalWord(s)} bằng ${tex(v)} tại cả hai đỉnh ${tex(f.p1.name)} và ${tex(f.p2.name)}, nên F nhận giá trị ${tex(v)} tại <b>mọi điểm thuộc đoạn thẳng ${tex(f.p1.name + f.p2.name)}</b> (đường mức ${tex(`${linear(R.model.A, R.model.B, 'tex')} = ${v}`)} chứa cạnh ${tex(f.p1.name + f.p2.name)}).`;
+  else if (f.type === 'ray') where = `F đạt ${goalWord(s)} bằng ${tex(v)} tại đỉnh ${tex(f.p.name)} và F không đổi dọc theo hướng ${tex(`\\vec{u} = (${numTex(f.ray.raw.x)};${numTex(f.ray.raw.y)})`)}, nên F nhận giá trị ${tex(v)} tại <b>mọi điểm thuộc tia biên</b> xuất phát từ ${tex(f.p.name)}.`;
+  else where = `F nhận giá trị ${tex(v)} tại <b>mọi điểm thuộc đường thẳng</b> ${tex(eqTex(f.line))}.`;
+  return `<div class="conclusion">${where}<br><b>Kết luận:</b> ${tex(`${op}_{S} F(x;y) = ${v}`)}; bài toán có <b>vô số phương án tối ưu</b>.${secondaryLine(R.secondary)}</div>`;
+}
+function secondaryLine(an) {
+  const t = secondaryNote(an);
+  return t ? `<div class="note mt-1"><i>Nhận xét thêm:</i> ${escapeHtml(t)}</div>` : '';
+}
+
+/* =====================================================================
+   8. ĐỒ THỊ CANVAS (Pan / Zoom / HiDPI / lớp tĩnh + lớp hoạt ảnh)
+   ===================================================================== */
+const canvas = $('#plot'), ctx = canvas.getContext('2d');
+const staticCv = document.createElement('canvas'), sctx = staticCv.getContext('2d');
+const wrap = $('#plotWrap');
+const view = { cx: 3, cy: 3, scale: 40 };
+let W = 0, H = 0, DPR = 1;
+let needStatic = true, needOverlay = true;
+let mouse = null;
+let labelBoxes = [];             // khung nhãn đỉnh của lần vẽ gần nhất (để mũi tên tránh chồng lấn)
+const FONT = '"Be Vietnam Pro", system-ui, sans-serif';
+
+function makeVP(v, w, h) {
+  return {
+    W: w, H: h, s: v.scale,
+    X: x => w / 2 + (x - v.cx) * v.scale,
+    Y: y => h / 2 - (y - v.cy) * v.scale,
+    wx: sx => v.cx + (sx - w / 2) / v.scale,
+    wy: sy => v.cy - (sy - h / 2) / v.scale
+  };
+}
+
+function resize() {
+  const r = wrap.getBoundingClientRect();
+  W = Math.max(1, r.width); H = Math.max(1, r.height);
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = staticCv.width = Math.round(W * DPR);
+  canvas.height = staticCv.height = Math.round(H * DPR);
+  if (autoFit) fitView();
+  needStatic = true;
+}
+new ResizeObserver(resize).observe(wrap);
+
+function niceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p;
+}
+function tickText(v, step) {
+  const d = Math.max(0, Math.ceil(-Math.log10(step) - 1e-9));
+  let s = v.toFixed(d); if (/^-0(\.0+)?$/.test(s)) s = '0';
+  return s.replace('.', ',');
+}
+
+/** Cắt đa giác bởi nửa mặt phẳng nx·x + ny·y ≤ nc (Sutherland–Hodgman). */
+function clipPoly(poly, k) {
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const P = poly[i], Q = poly[(i + 1) % poly.length];
+    const fp = k.nx * P.x + k.ny * P.y - k.nc, fq = k.nx * Q.x + k.ny * Q.y - k.nc;
+    const pin = fp <= 0, qin = fq <= 0;
+    if (pin) out.push(P);
+    if (pin !== qin) { const t = fp / (fp - fq); out.push({ x: P.x + t * (Q.x - P.x), y: P.y + t * (Q.y - P.y) }); }
+  }
+  return out;
+}
+/** Cắt đường thẳng a·x + b·y = c bởi hình chữ nhật (Liang–Barsky). */
+function clipLine(a, b, c, x0, x1, y0, y1) {
+  const n2 = a * a + b * b, L = Math.sqrt(n2);
+  const px = a * c / n2, py = b * c / n2, dx = -b / L, dy = a / L;
+  let t0 = -Infinity, t1 = Infinity;
+  const ax = (p, d, lo, hi) => {
+    if (Math.abs(d) < 1e-15) return p >= lo && p <= hi;
+    let ta = (lo - p) / d, tb = (hi - p) / d; if (ta > tb) [ta, tb] = [tb, ta];
+    t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); return true;
+  };
+  if (!ax(px, dx, x0, x1) || !ax(py, dy, y0, y1) || t0 > t1) return null;
+  return [{ x: px + dx * t0, y: py + dy * t0 }, { x: px + dx * t1, y: py + dy * t1 }];
+}
+function haloText(c, text, x, y, color = '#0f172a', halo = 'rgba(255,255,255,.95)', lw = 3.5) {
+  c.lineJoin = 'round'; c.lineWidth = lw; c.strokeStyle = halo; c.strokeText(text, x, y);
+  c.fillStyle = color; c.fillText(text, x, y);
+}
+function roundRectPath(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r); c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
+}
+
+/** Lớp tĩnh: lưới, trục, miền nghiệm, đường biên, đường mức, các đỉnh. */
+function drawScene(c, vp) {
+  const { W: w, H: h } = vp;
+  c.save();
+  c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, h);
+  const xmin = vp.wx(0), xmax = vp.wx(w), ymax = vp.wy(0), ymin = vp.wy(h);
+  const step = niceStep(70 / vp.s), minor = step / 5;
+
+  // Lưới phụ & lưới chính
+  const grid = (st, color) => {
+    const i0 = Math.ceil(xmin / st), i1 = Math.floor(xmax / st), j0 = Math.ceil(ymin / st), j1 = Math.floor(ymax / st);
+    if (i1 - i0 > 600 || j1 - j0 > 600) return;
+    c.beginPath();
+    for (let i = i0; i <= i1; i++) { const sx = Math.round(vp.X(i * st)) + 0.5; c.moveTo(sx, 0); c.lineTo(sx, h); }
+    for (let j = j0; j <= j1; j++) { const sy = Math.round(vp.Y(j * st)) + 0.5; c.moveTo(0, sy); c.lineTo(w, sy); }
+    c.strokeStyle = color; c.lineWidth = 1; c.stroke();
+  };
+  if (minor * vp.s >= 9) grid(minor, '#f4f6f9');
+  grid(step, '#e5e9f0');
+
+  const ok = R && R.status === 'ok';
+  const consAll = R && R.model ? R.model.cons : (R && R.cons) || [];
+
+  // Gạch bỏ phần KHÔNG thuộc miền nghiệm của từng bất phương trình (theo quy ước SGK)
+  if (R && (R.status === 'ok' || R.status === 'empty')) {
+    const HATCH_ANG = [45, -45, 60, -30, 30, -60, 15, 75, -15, -75];
+    const pad = 30 / vp.s;
+    const rect = [{ x: xmin - pad, y: ymin - pad }, { x: xmax + pad, y: ymin - pad }, { x: xmax + pad, y: ymax + pad }, { x: xmin - pad, y: ymax + pad }];
+    const ox0 = vp.X(0), oy0 = vp.Y(0), span = w + h;
+    R.cons.forEach(k => {
+      const poly = clipPoly(rect, { nx: -k.nx, ny: -k.ny, nc: -k.nc });   // nửa mặt phẳng bị loại
+      if (poly.length < 3) return;
+      c.save();
+      c.beginPath();
+      poly.forEach((p, i) => i ? c.lineTo(vp.X(p.x), vp.Y(p.y)) : c.moveTo(vp.X(p.x), vp.Y(p.y)));
+      c.closePath(); c.clip();
+      const deg = k.axis === 'x' ? 0 : k.axis === 'y' ? 90 : HATCH_ANG[k.index % HATCH_ANG.length];
+      const a = deg * Math.PI / 180, dx = Math.cos(a), dy = -Math.sin(a), nx = -dy, ny = dx;
+      const sp = 8;
+      // neo các nét gạch theo gốc tọa độ để chúng di chuyển cùng mặt phẳng khi kéo
+      const proj = (x, y) => (x - ox0) * nx + (y - oy0) * ny;
+      const ps = [proj(0, 0), proj(w, 0), proj(0, h), proj(w, h)];
+      const pc = proj(w / 2, h / 2);
+      c.beginPath();
+      for (let i = Math.floor(Math.min(...ps) / sp); i <= Math.ceil(Math.max(...ps) / sp); i++) {
+        const bx = w / 2 + nx * (i * sp - pc), by = h / 2 + ny * (i * sp - pc);
+        c.moveTo(bx - dx * span, by - dy * span); c.lineTo(bx + dx * span, by + dy * span);
+      }
+      c.strokeStyle = k.user ? k.color + '73' : 'rgba(100,116,139,.45)';
+      c.lineWidth = 1; c.stroke();
+      c.restore();
+    });
+  }
+
+  // Miền nghiệm (cắt khung nhìn bởi mọi nửa mặt phẳng → vẽ được cả miền không bị chặn)
+  if (ok) {
+    const pad = 30 / vp.s;
+    let poly = [{ x: xmin - pad, y: ymin - pad }, { x: xmax + pad, y: ymin - pad }, { x: xmax + pad, y: ymax + pad }, { x: xmin - pad, y: ymax + pad }];
+    for (const k of R.cons) { poly = clipPoly(poly, k); if (!poly.length) break; }
+    if (poly.length >= 3) {
+      c.beginPath();
+      poly.forEach((p, i) => i ? c.lineTo(vp.X(p.x), vp.Y(p.y)) : c.moveTo(vp.X(p.x), vp.Y(p.y)));
+      c.closePath();
+      c.fillStyle = 'rgba(255, 140, 170, 0.28)'; c.fill();
+    }
+    if (R.bounded && R.verts.length === 2) {
+      c.beginPath(); c.moveTo(vp.X(R.verts[0].x), vp.Y(R.verts[0].y)); c.lineTo(vp.X(R.verts[1].x), vp.Y(R.verts[1].y));
+      c.strokeStyle = 'rgba(236, 72, 153, .55)'; c.lineWidth = 6; c.lineCap = 'round'; c.stroke();
+    }
+  }
+
+  // Trục tọa độ
+  const ox = vp.X(0), oy = vp.Y(0);
+  c.strokeStyle = '#475569'; c.fillStyle = '#475569'; c.lineWidth = 1.4;
+  if (oy >= -1 && oy <= h + 1) {
+    c.beginPath(); c.moveTo(0, oy); c.lineTo(w - 2, oy); c.stroke();
+    c.beginPath(); c.moveTo(w - 2, oy); c.lineTo(w - 11, oy - 4.5); c.lineTo(w - 11, oy + 4.5); c.closePath(); c.fill();
+  }
+  if (ox >= -1 && ox <= w + 1) {
+    c.beginPath(); c.moveTo(ox, h); c.lineTo(ox, 2); c.stroke();
+    c.beginPath(); c.moveTo(ox, 2); c.lineTo(ox - 4.5, 11); c.lineTo(ox + 4.5, 11); c.closePath(); c.fill();
+  }
+  // Nhãn số trên trục
+  c.font = `500 11px ${FONT}`;
+  const ly = Math.min(Math.max(oy + 5, 3), h - 16);
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  for (let i = Math.ceil(xmin / step); i <= Math.floor(xmax / step); i++) {
+    if (i === 0) continue;
+    const x = i * step, sx = vp.X(x);
+    if (sx < 12 || sx > w - 16) continue;
+    if (oy >= 0 && oy <= h) { c.beginPath(); c.moveTo(sx, oy - 3); c.lineTo(sx, oy + 3); c.strokeStyle = '#475569'; c.lineWidth = 1; c.stroke(); }
+    haloText(c, tickText(x, step), sx, ly, '#64748b');
+  }
+  let lx, align;
+  if (ox < 34) { lx = Math.max(ox + 6, 4); align = 'left'; } else if (ox > w) { lx = w - 4; align = 'right'; } else { lx = ox - 6; align = 'right'; }
+  c.textAlign = align; c.textBaseline = 'middle';
+  for (let j = Math.ceil(ymin / step); j <= Math.floor(ymax / step); j++) {
+    if (j === 0) continue;
+    const y = j * step, sy = vp.Y(y);
+    if (sy < 14 || sy > h - 10) continue;
+    if (ox >= 0 && ox <= w) { c.beginPath(); c.moveTo(ox - 3, sy); c.lineTo(ox + 3, sy); c.strokeStyle = '#475569'; c.lineWidth = 1; c.stroke(); }
+    haloText(c, tickText(y, step), lx, sy, '#64748b');
+  }
+  c.font = `italic 600 14px "Times New Roman", serif`;
+  if (oy >= 0 && oy <= h) { c.textAlign = 'right'; c.textBaseline = 'bottom'; haloText(c, 'x', w - 6, oy - 6, '#1e293b'); }
+  if (ox >= 0 && ox <= w) { c.textAlign = 'left'; c.textBaseline = 'top'; haloText(c, 'y', ox + 8, 4, '#1e293b'); }
+  const originIsVertex = ok && R.pts.some(p => p.x === 0 && p.y === 0);
+  if (!originIsVertex && ox >= 0 && ox <= w && oy >= 0 && oy <= h) { c.textAlign = 'right'; c.textBaseline = 'top'; haloText(c, 'O', ox - 4, oy + 3, '#1e293b'); }
+
+  // Tính trước vị trí nhãn các đỉnh để các nhãn khác tránh chồng lấn
+  const placed = [];
+  const hit = b => placed.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
+  const vLabels = [];
+  if (ok) {
+    const qs = { x: vp.X(R.q.x), y: vp.Y(R.q.y) };
+    c.font = `700 12.5px ${FONT}`;
+    R.pts.forEach(p => {
+      const sx = vp.X(p.x), sy = vp.Y(p.y);
+      if (sx < -20 || sx > w + 20 || sy < -20 || sy > h + 20) return;
+      let dx = sx - qs.x, dy = sy - qs.y; const L = hyp(dx, dy);
+      if (L < 1e-6) { dx = 1; dy = -1; } else { dx /= L; dy /= L; }
+      const label = ptText(p), tw = c.measureText(label).width;
+      const align = dx > 0.3 ? 'left' : dx < -0.3 ? 'right' : 'center';
+      let tx = sx + dx * 14, ty = sy + dy * 14;
+      if (align === 'left') tx = Math.min(tx, w - tw - 4); else if (align === 'right') tx = Math.max(tx, tw + 4);
+      else tx = Math.min(Math.max(tx, tw / 2 + 4), w - tw / 2 - 4);
+      ty = Math.min(Math.max(ty, 10), h - 10);
+      const bx = align === 'left' ? tx : align === 'right' ? tx - tw : tx - tw / 2;
+      placed.push({ x: bx - 2, y: ty - 9, w: tw + 4, h: 18 }, { x: sx - 8, y: sy - 8, w: 16, h: 16 });
+      vLabels.push({ p, sx, sy, tx, ty, align, label });
+    });
+  }
+  labelBoxes = placed.slice();
+
+  // Đường biên của các ràng buộc người dùng nhập
+  const inset = 6;
+  const rx0 = vp.wx(inset), rx1 = vp.wx(w - inset), ry0 = vp.wy(h - inset), ry1 = vp.wy(inset);
+  consAll.filter(k => k.user).forEach(k => {
+    const seg = clipLine(k.a, k.b, k.c, rx0, rx1, ry0, ry1);
+    if (!seg) return;
+    let [P, Q] = seg.map(p => ({ x: vp.X(p.x), y: vp.Y(p.y) }));
+    c.save();
+    c.beginPath(); c.moveTo(P.x, P.y); c.lineTo(Q.x, Q.y);
+    c.strokeStyle = k.color; c.lineWidth = 2; c.lineCap = 'round';
+    if (k.strict) c.setLineDash([8, 6]);
+    c.stroke(); c.restore();
+    // nhãn: đặt gần đầu mút bên phải / phía trên
+    if (Q.x < P.x || (Math.abs(Q.x - P.x) < 1 && Q.y > P.y)) [P, Q] = [Q, P];
+    const len = hyp(Q.x - P.x, Q.y - P.y) || 1;
+    const nxs = -(Q.y - P.y) / len, nys = (Q.x - P.x) / len;
+    const sgn0 = nys > 0 ? -1 : 1;
+    c.font = `600 12px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const label = `${k.label}: ${linear(k.a, k.b, 'text')} = ${numText(k.c)}`;
+    const tw = c.measureText(label).width;
+    let best = null;
+    search: for (const t of [0.86, 0.14, 0.7, 0.3, 0.55, 0.95, 0.05]) {
+      for (const sgn of [sgn0, -sgn0]) {
+        const Lx = P.x + (Q.x - P.x) * t, Ly = P.y + (Q.y - P.y) * t;
+        const cx = Math.min(Math.max(Lx + nxs * 13 * sgn, tw / 2 + 4), w - tw / 2 - 4);
+        const cy = Math.min(Math.max(Ly + nys * 13 * sgn, 10), h - 10);
+        const box = { x: cx - tw / 2 - 2, y: cy - 9, w: tw + 4, h: 18 };
+        if (!best) best = { cx, cy, box };
+        if (!hit(box)) { best = { cx, cy, box }; break search; }
+      }
+    }
+    placed.push(best.box);
+    haloText(c, label, best.cx, best.cy, k.color);
+  });
+
+  if (ok) {
+    const prim = R.primary;
+    // Tô sáng cạnh / tia tối ưu (vô số nghiệm)
+    if (prim.kind === 'finite') {
+      const f = prim.face;
+      let segs = null;
+      if (f.type === 'segment') segs = [f.p1, f.p2];
+      else if (f.type === 'ray') { const far = 4 * Math.max(xmax - xmin, ymax - ymin) + hyp(f.p.x - vp.wx(w / 2), f.p.y - vp.wy(h / 2)); segs = [f.p, { x: f.p.x + f.ray.u.x * far, y: f.p.y + f.ray.u.y * far }]; }
+      else if (f.type === 'line') { const sg = clipLine(f.line.a, f.line.b, f.line.c, xmin - 1, xmax + 1, ymin - 1, ymax + 1); if (sg) segs = sg; }
+      if (segs) {
+        c.save(); c.beginPath(); c.moveTo(vp.X(segs[0].x), vp.Y(segs[0].y)); c.lineTo(vp.X(segs[1].x), vp.Y(segs[1].y));
+        c.strokeStyle = prim.attained ? 'rgba(16, 185, 129, .9)' : 'rgba(245, 158, 11, .9)'; c.lineWidth = 4.5; c.lineCap = 'round';
+        if (!prim.attained) c.setLineDash([10, 7]);
+        c.stroke(); c.restore();
+      }
+    }
+    // Các đỉnh (phương án cực biên)
+    c.font = `700 12.5px ${FONT}`; c.textBaseline = 'middle';
+    vLabels.forEach(({ p, sx, sy, tx, ty, align, label }) => {
+      c.beginPath(); c.arc(sx, sy, 5.2, 0, Math.PI * 2);
+      if (p.included) { c.fillStyle = '#ef4444'; c.fill(); c.lineWidth = 2; c.strokeStyle = '#fff'; c.stroke(); }
+      else { c.fillStyle = '#fff'; c.fill(); c.lineWidth = 2; c.strokeStyle = '#ef4444'; c.stroke(); }
+      c.textAlign = align;
+      haloText(c, label, tx, ty, '#b91c1c');
+    });
+  }
+  c.restore();
+}
+
+/** Lớp động: hiệu ứng nhấp nháy điểm tối ưu, mũi tên chỉ dẫn, tọa độ con trỏ. */
+function drawOverlay(c, vp, t, forExport) {
+  const { W: w, H: h } = vp;
+  if (R && R.status === 'ok' && R.primary.kind === 'finite') {
+    const an = R.primary, f = an.face;
+    const target = f.type === 'segment' ? { x: (f.p1.x + f.p2.x) / 2, y: (f.p1.y + f.p2.y) / 2 } : f.p;
+    const sx = vp.X(target.x), sy = vp.Y(target.y);
+    const col = an.attained ? [16, 185, 129] : [245, 158, 11];
+    const ph = (forExport || REDUCED_MOTION) ? 0.35 : (t % 1500) / 1500;
+
+    if (sx > -40 && sx < w + 40 && sy > -40 && sy < h + 40) {
+      // vòng sóng lan tỏa
+      for (const off of [0, 0.5]) {
+        const p = (ph + off) % 1;
+        c.beginPath(); c.arc(sx, sy, 7 + 20 * p, 0, Math.PI * 2);
+        c.strokeStyle = `rgba(${col},${0.75 * (1 - p)})`; c.lineWidth = 2.5; c.stroke();
+      }
+      if (f.type === 'segment') {
+        const glow = 0.25 + 0.25 * Math.sin(ph * Math.PI * 2);
+        c.save(); c.beginPath(); c.moveTo(vp.X(f.p1.x), vp.Y(f.p1.y)); c.lineTo(vp.X(f.p2.x), vp.Y(f.p2.y));
+        c.strokeStyle = `rgba(${col},${glow})`; c.lineWidth = 12; c.lineCap = 'round'; c.stroke(); c.restore();
+      }
+      if (f.type === 'point' || f.type === 'ray') {
+        c.beginPath(); c.arc(sx, sy, 7, 0, Math.PI * 2);
+        c.fillStyle = an.attained ? `rgb(${col})` : '#fff'; c.fill();
+        c.lineWidth = an.attained ? 2.5 : 3; c.strokeStyle = an.attained ? '#fff' : `rgb(${col})`; c.stroke();
+      }
+
+      // mũi tên chỉ vào điểm tối ưu
+      const label = `${an.attained ? goalShort(an.sign) : (an.sign > 0 ? 'sup' : 'inf')} F = ${numText(an.value)}`;
+      c.font = `700 13px ${FONT}`;
+      const tw = c.measureText(label).width + 20, th = 26;
+      const qx = vp.X(R.q.x), qy = vp.Y(R.q.y);
+      let ox = sx - qx, oy = sy - qy; const L = hyp(ox, oy);
+      if (L < 1e-6) { ox = 0.7; oy = -0.7; } else { ox /= L; oy /= L; }
+      const bob = forExport ? 0 : Math.sin(ph * Math.PI * 2) * 3;
+      const dist = 74;
+      const cands = [];
+      for (const a of [0, 0.6, -0.6, 1.2, -1.2, Math.PI]) {
+        const ca = Math.cos(a), sa = Math.sin(a);
+        cands.push({ x: ox * ca - oy * sa, y: ox * sa + oy * ca });
+      }
+      const overlaps = (bx, by) => labelBoxes.some(o => bx - tw / 2 < o.x + o.w && bx + tw / 2 > o.x && by - th / 2 < o.y + o.h && by + th / 2 > o.y);
+      let dir = null, fallback = null;
+      for (const extra of [0, 1, 2, 3, 4, 5, 6, 7].map(i => i * Math.PI / 4)) {
+        for (const d0 of cands) {
+          const d = { x: d0.x * Math.cos(extra) - d0.y * Math.sin(extra), y: d0.x * Math.sin(extra) + d0.y * Math.cos(extra) };
+          const bx = sx + d.x * dist, by = sy + d.y * dist;
+          const inside = bx - tw / 2 > 4 && bx + tw / 2 < w - 4 && by - th / 2 > 4 && by + th / 2 < h - 4;
+          if (inside && !fallback) fallback = d;
+          if (inside && !overlaps(bx, by)) { dir = d; break; }
+        }
+        if (dir) break;
+      }
+      dir = dir || fallback || cands[0];
+      const bx = sx + dir.x * (dist + bob), by = sy + dir.y * (dist + bob);
+      const ex = sx + dir.x * 13, ey = sy + dir.y * 13;
+      const stx = sx + dir.x * (dist + bob - Math.min(tw, th * 2) / 2 - 2), sty = sy + dir.y * (dist + bob - th / 2 - 2);
+      c.save();
+      c.strokeStyle = `rgb(${col})`; c.fillStyle = `rgb(${col})`; c.lineWidth = 2.5; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(stx, sty); c.lineTo(ex, ey); c.stroke();
+      const ang = Math.atan2(ey - sty, ex - stx);
+      c.beginPath(); c.moveTo(ex, ey);
+      c.lineTo(ex - 11 * Math.cos(ang - 0.42), ey - 11 * Math.sin(ang - 0.42));
+      c.lineTo(ex - 11 * Math.cos(ang + 0.42), ey - 11 * Math.sin(ang + 0.42)); c.closePath(); c.fill();
+      const rx = Math.min(Math.max(bx - tw / 2, 4), w - tw - 4), ry = Math.min(Math.max(by - th / 2, 4), h - th - 4);
+      c.shadowColor = 'rgba(15,23,42,.18)'; c.shadowBlur = 8; c.shadowOffsetY = 2;
+      roundRectPath(c, rx, ry, tw, th, 13); c.fillStyle = an.attained ? '#059669' : '#d97706'; c.fill();
+      c.shadowColor = 'transparent';
+      c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, rx + tw / 2, ry + th / 2 + 0.5);
+      c.restore();
+    }
+  }
+  // tọa độ con trỏ chuột
+  if (!forExport && mouse) {
+    const txt = `x = ${decStr(vp.wx(mouse.x), 2)} ; y = ${decStr(vp.wy(mouse.y), 2)}`;
+    c.font = `500 11.5px ${FONT}`;
+    const tw = c.measureText(txt).width + 14;
+    roundRectPath(c, 8, h - 30, tw, 22, 8); c.fillStyle = 'rgba(255,255,255,.92)'; c.fill();
+    c.strokeStyle = '#e2e8f0'; c.lineWidth = 1; c.stroke();
+    c.fillStyle = '#475569'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(txt, 15, h - 19);
+  }
+}
+
+/** Vòng lặp vẽ: lớp tĩnh chỉ vẽ lại khi cần; lớp động vẽ theo khung hình khi có điểm tối ưu. */
+function frame(t) {
+  if (W > 1 && H > 1) {
+    const vp = makeVP(view, W, H);
+    if (needStatic) {
+      sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      drawScene(sctx, vp);
+      needStatic = false; needOverlay = true;
+    }
+    const anim = !REDUCED_MOTION && R && R.status === 'ok' && R.primary.kind === 'finite';
+    if (anim || needOverlay) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(staticCv, 0, 0);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      drawOverlay(ctx, vp, t, false);
+      needOverlay = false;
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Căn khung nhìn ---------- */
+function computeFit(w, h) {
+  const xs = [0], ys = [0];
+  if (R && R.status === 'ok') {
+    R.pts.forEach(p => { xs.push(p.x); ys.push(p.y); });
+    if (!R.bounded) {
+      const size = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 4);
+      const ext = Math.max(3, size * 0.6);
+      [R.pts[0], R.pts[R.pts.length - 1]].forEach(p => R.rays.forEach(r => { xs.push(p.x + r.u.x * ext); ys.push(p.y + r.u.y * ext); }));
+    }
+  } else if (R && R.cons) {
+    const cs = R.cons.filter(k => k.user);
+    cs.forEach(k => {
+      if (Math.abs(k.a) > 1e-12) { xs.push(k.c / k.a); ys.push(0); }
+      if (Math.abs(k.b) > 1e-12) { xs.push(0); ys.push(k.c / k.b); }
+    });
+    for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) {
+      const d = cs[i].a * cs[j].b - cs[i].b * cs[j].a; if (Math.abs(d) < 1e-12) continue;
+      xs.push((cs[i].c * cs[j].b - cs[j].c * cs[i].b) / d); ys.push((cs[i].a * cs[j].c - cs[j].a * cs[i].c) / d);
+    }
+  } else {
+    xs.push(8); ys.push(8);
+  }
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  let bw = x1 - x0, bh = y1 - y0;
+  const big = Math.max(bw, bh);
+  if (big < 1e-9) { x0 -= 5; x1 += 5; y0 -= 5; y1 += 5; bw = bh = 10; }
+  else { if (bw < big * 0.15) { x0 -= big * 0.15; x1 += big * 0.15; bw = x1 - x0; } if (bh < big * 0.15) { y0 -= big * 0.15; y1 += big * 0.15; bh = y1 - y0; } }
+  const scale = Math.min(Math.max(Math.min(w / (bw * 1.35), h / (bh * 1.35)), 1e-4), 1e6);
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, scale };
+}
+function fitView() {
+  if (W < 2) return;
+  Object.assign(view, computeFit(W, H));
+  needStatic = true;
+}
+function zoomAt(sx, sy, f) {
+  const wx = view.cx + (sx - W / 2) / view.scale, wy = view.cy - (sy - H / 2) / view.scale;
+  const ns = Math.min(Math.max(view.scale * f, 1e-4), 1e6);
+  view.cx = wx - (sx - W / 2) / ns; view.cy = wy + (sy - H / 2) / ns; view.scale = ns;
+  autoFit = false; needStatic = true;
+}
+
+/* ---------- Tương tác: kéo (pan), cuộn & chụm 2 ngón (zoom) ---------- */
+const pointers = new Map();
+let lastPinch = null;
+const pinchInfo = () => {
+  const [a, b] = [...pointers.values()];
+  return { d: Math.max(hyp(a.x - b.x, a.y - b.y), 1), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+};
+const localPos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+
+canvas.addEventListener('pointerdown', e => {
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, localPos(e));
+  if (pointers.size === 2) lastPinch = pinchInfo();
+  canvas.classList.add('grabbing');
+});
+canvas.addEventListener('pointermove', e => {
+  const p = localPos(e);
+  if (e.pointerType === 'mouse') { mouse = p; needOverlay = true; }
+  if (!pointers.has(e.pointerId)) return;
+  const prev = pointers.get(e.pointerId);
+  pointers.set(e.pointerId, p);
+  if (pointers.size === 1) {
+    view.cx -= (p.x - prev.x) / view.scale;
+    view.cy += (p.y - prev.y) / view.scale;
+    autoFit = false; needStatic = true;
+  } else if (pointers.size === 2) {
+    const cur = pinchInfo();
+    if (lastPinch) {
+      view.cx -= (cur.mx - lastPinch.mx) / view.scale;
+      view.cy += (cur.my - lastPinch.my) / view.scale;
+      zoomAt(cur.mx, cur.my, cur.d / lastPinch.d);
+    }
+    lastPinch = cur;
+  }
+});
+const endPointer = e => {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) lastPinch = null;
+  if (!pointers.size) canvas.classList.remove('grabbing');
+};
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { mouse = null; needOverlay = true; } });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const p = localPos(e);
+  const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+  zoomAt(p.x, p.y, Math.exp(-dy * 0.0015));
+}, { passive: false });
+canvas.addEventListener('dblclick', e => { const p = localPos(e); zoomAt(p.x, p.y, 1.8); });
+
+$('#btnZoomIn').addEventListener('click', () => zoomAt(W / 2, H / 2, 1.4));
+$('#btnZoomOut').addEventListener('click', () => zoomAt(W / 2, H / 2, 1 / 1.4));
+$('#btnFit').addEventListener('click', () => { autoFit = true; fitView(); });
+
+/* =====================================================================
+   9. XUẤT ẢNH PNG & BÁO CÁO PDF
+   ===================================================================== */
+function drawCaption(c, w, h) {
+  if (!R || !R.model) return;
+  const m = R.model;
+  const txt = `F(x;y) = ${linear(m.A, m.B, 'text')}  →  ${m.goal === 'max' ? 'Max' : 'Min'}`;
+  c.font = `700 13px ${FONT}`;
+  const tw = c.measureText(txt).width + 22;
+  roundRectPath(c, 10, 10, tw, 28, 10); c.fillStyle = 'rgba(234,248,241,.96)'; c.fill();
+  c.strokeStyle = '#a8e6cf'; c.lineWidth = 1.5; c.stroke();
+  c.fillStyle = '#065f46'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(txt, 21, 24.5);
+  // chú giải
+  c.font = `500 11px ${FONT}`;
+  const items = [['area', 'Miền nghiệm S'], ['hatch', 'Phần bị gạch bỏ'], ['dot', 'Đỉnh'], ['opt', 'Điểm tối ưu']];
+  let x = 12; const y = h - 16;
+  const boxW = items.reduce((s, it) => s + c.measureText(it[1]).width + 30, 0) + 6;
+  roundRectPath(c, 6, h - 30, boxW, 24, 8); c.fillStyle = 'rgba(255,255,255,.92)'; c.fill(); c.strokeStyle = '#e2e8f0'; c.lineWidth = 1; c.stroke();
+  items.forEach(([k, t]) => {
+    if (k === 'area') { c.fillStyle = 'rgba(255,140,170,.4)'; c.fillRect(x, y - 5, 14, 10); }
+    else if (k === 'hatch') {
+      c.save(); c.beginPath(); c.rect(x, y - 5, 14, 10); c.clip();
+      c.beginPath(); for (let i = -10; i < 24; i += 4) { c.moveTo(x + i, y + 5); c.lineTo(x + i + 10, y - 5); }
+      c.strokeStyle = '#64748b'; c.lineWidth = 1; c.stroke(); c.restore();
+      c.strokeStyle = '#cbd5e1'; c.strokeRect(x, y - 5, 14, 10);
+    }
+    else { c.beginPath(); c.arc(x + 7, y, 5, 0, Math.PI * 2); c.fillStyle = k === 'dot' ? '#ef4444' : '#10b981'; c.fill(); }
+    c.fillStyle = '#334155'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(t, x + 19, y + 0.5);
+    x += c.measureText(t).width + 30;
+  });
+}
+function renderImage(w, h, v, scale, caption) {
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(w * scale); cv.height = Math.round(h * scale);
+  const c = cv.getContext('2d');
+  c.setTransform(scale, 0, 0, scale, 0, 0);
+  const vp = makeVP(v, w, h);
+  drawScene(c, vp);
+  drawOverlay(c, vp, 0, true);
+  if (caption) drawCaption(c, w, h);
+  needStatic = true;               // khôi phục bố cục nhãn cho khung nhìn trên màn hình
+  return cv;
+}
+
+$('#btnPng').addEventListener('click', () => {
+  if (W < 2) return;
+  const scale = Math.min(4, Math.max(2, 1500 / W));
+  const cv = renderImage(W, H, view, scale, true);
+  const fname = `mien-nghiem-QHTT-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
+  const finish = url => {
+    const a = document.createElement('a');
+    a.href = url; a.download = fname; document.body.appendChild(a); a.click();
+    setTimeout(() => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); a.remove(); }, 1500);
+    toast('Đã tải ảnh đồ thị (.png)');
+  };
+  if (cv.toBlob) cv.toBlob(b => finish(b ? URL.createObjectURL(b) : cv.toDataURL('image/png')), 'image/png');
+  else finish(cv.toDataURL('image/png'));
+});
+
+function ensureSolved() {
+  run();
+  if (!R || R.status === 'invalid') { toast('Vui lòng nhập đầy đủ và đúng dữ liệu trước.'); return false; }
+  return true;
+}
+
+
+function printReport() {
+  if (!ensureSolved()) return;
+  const m = R.model, s = m.goal === 'max' ? 1 : -1;
+  const now = new Date();
+  const area = $('#printArea');
+  area.innerHTML = `
+    <div class="report-head">
+      <h1>BÁO CÁO GIẢI BÀI TOÁN QUY HOẠCH TUYẾN TÍNH HAI BIẾN</h1>
+      <p>Phương pháp đồ thị – trình bày theo 5 bước · Ngày lập: ${now.toLocaleDateString('vi-VN')} ${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+    </div>
+    <div class="report-problem">
+      <b>Đề bài.</b> Tìm ${goalWord(s)} của biểu thức ${tex(`F(x;y) = ${linear(m.A, m.B, 'tex')}`)} với ${tex('(x;y)')} thỏa mãn hệ bất phương trình
+      <div style="margin-top:4px">${tex(systemTex(m.cons), true)}</div>
+    </div>
+    <div class="solution">${buildSolution(R, null)}</div>
+    <div class="report-foot">Báo cáo được tạo tự động bởi Web App “Trực quan hóa miền nghiệm và giải bài toán Quy hoạch tuyến tính hai biến”.</div>`;
+  const imgs = [...area.querySelectorAll('img')];
+  Promise.all(imgs.map(im => im.complete ? Promise.resolve() : new Promise(r => { im.onload = im.onerror = r; })))
+    .then(() => setTimeout(() => window.print(), 120));
+}
+$('#btnPrint').addEventListener('click', printReport);
+
+/* =====================================================================
+   10. KHỞI ĐỘNG
+   ===================================================================== */
+loadSample(SAMPLES[0]);
+sampleSel.value = '0';
+resize();
+requestAnimationFrame(frame);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { needStatic = true; });
+window.addEventListener('load', () => { renderPreview(readModel(true).model); renderResults(); needStatic = true; });
+
+// Cho phép kiểm thử tự động
+window.__QHTT__ = { solveLP, makeCons, state, loadSample, SAMPLES, get result() { return R; }, buildSolution, run };
+})();
+</script>
+</body>
+</html>
